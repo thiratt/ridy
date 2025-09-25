@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 
-namespace server.Models;
+namespace server.Models.Tables;
 
 public partial class RidyContext : DbContext
 {

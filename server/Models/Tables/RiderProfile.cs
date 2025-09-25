@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace server.Models;
+namespace server.Models.Tables;
 
 public partial class RiderProfile
 {
