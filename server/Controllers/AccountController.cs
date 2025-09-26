@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NetTopologySuite.Geometries;
@@ -17,7 +18,13 @@ namespace server.Controllers
         [HttpGet("{id:guid}")]
         public async Task<IActionResult> GetAccountById(Guid id)
         {
-            var account = await _context.Accounts.FirstOrDefaultAsync(a => a.Id == id);
+            var account = await _context.Accounts
+                .Include(a => a.UserAddresses)
+                .Include(a => a.UserPickupAddresses)
+                .Include(a => a.RiderProfile)
+                // .Include(a => a.RiderActiveLock)
+                .AsSplitQuery()
+                .FirstOrDefaultAsync(a => a.Id == id);
 
             if (account == null)
             {
@@ -31,11 +38,47 @@ namespace server.Controllers
                 return NotFound(errorResponse);
             }
 
+            var accountResponse = new Models.Response.Account
+            {
+                Id = account.Id,
+                PhoneNumber = account.PhoneNumber,
+                Firstname = account.Firstname,
+                Lastname = account.Lastname,
+                AvatarUrl = account.AvatarUrl,
+                Role = account.Role,
+                CreatedAt = ThaiDateConvertor.ToThaiDateString(account.CreatedAt),
+                UpdatedAt = ThaiDateConvertor.ToThaiDateString(account.UpdatedAt),
+
+                RiderProfile = account.RiderProfile is not null ? new Models.Response.RiderProfile
+                {
+                    RiderId = account.RiderProfile.RiderId,
+                    VehiclePlate = account.RiderProfile.VehiclePlate,
+                    VehiclePhotoUrl = account.RiderProfile.VehiclePhotoUrl,
+                } : null,
+                UserAddresses = [.. account.UserAddresses.Select(ua => new Models.Response.UserAddress
+                {
+                    Id = ua.Id,
+                    AddressText = ua.AddressText,
+                    Label = ua.Label,
+                    Latitude = ua.Location.Y,
+                    Longitude = ua.Location.X,
+                    CreatedAt = ua.CreatedAt
+                })],
+                UserPickupAddresses = [.. account.UserPickupAddresses.Select(upa => new Models.Response.UserPickupAddress
+                {
+                    Id = upa.Id,
+                    AddressText = upa.AddressText,
+                    Latitude = upa.Location.Y,
+                    Longitude = upa.Location.X,
+                    CreatedAt = upa.CreatedAt
+                })],
+            };
+
             var successResponse = new Models.Response.SuccessResponse
             {
                 Status = Models.Enum.ResponseStatus.Success,
                 Message = "Account retrieved successfully",
-                Data = account
+                Data = accountResponse
             };
 
             return Ok(successResponse);

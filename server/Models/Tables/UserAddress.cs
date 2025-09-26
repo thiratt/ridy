@@ -10,7 +10,7 @@ public partial class UserAddress
 
     public Guid UserId { get; set; }
 
-    public string? Label { get; set; }
+    public string Label { get; set; } = null!;
 
     public string AddressText { get; set; } = null!;
 
