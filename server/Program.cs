@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.DataProtection.AuthenticatedEncryption.ConfigurationM
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.RateLimiting;
 using server.Models.Tables;
+using server.Utils;
 
 namespace Server
 {
@@ -29,17 +30,9 @@ namespace Server
             services.AddEndpointsApiExplorer();
             services.AddOpenApi();
 
-            services.AddDataProtection().UseCryptographicAlgorithms(
-                new AuthenticatedEncryptorConfiguration
-                {
-                    EncryptionAlgorithm = EncryptionAlgorithm.AES_256_CBC,
-                    ValidationAlgorithm = ValidationAlgorithm.HMACSHA512
-                }
-            );
-
             services.AddDbContext<RidyContext>(options =>
             {
-                var connectionString = services.BuildServiceProvider().GetRequiredService<IConfiguration>().GetConnectionString("DefaultConnection");
+                var connectionString = ConnectionString.GetMySQLConnectionString();
                 if (string.IsNullOrEmpty(connectionString))
                 {
                     throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
