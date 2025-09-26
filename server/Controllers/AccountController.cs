@@ -115,7 +115,7 @@ namespace server.Controllers
                     CreatedAt = DateTime.UtcNow
                 };
 
-                if (request.Role == "Rider")
+                if (request.Role.ToUpper() == "RIDER")
                 {
                     string VehiclePlate = request.VehiclePlate ?? throw new ArgumentNullException("VehiclePlate is required for Rider role");
                     IFormFile VehiclePhotoData = request.VehiclePhotoData ?? throw new ArgumentNullException(nameof(request));
