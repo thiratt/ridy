@@ -1,5 +1,5 @@
-import 'package:app/pages/auth/login.dart';
-import 'package:app/pages/auth/signup_selection.dart';
+import 'package:app/pages/auth/login/page.dart';
+import 'package:app/pages/auth/signup/page.dart';
 import 'package:app/widgets/button.dart';
 import 'package:flutter/material.dart';
 

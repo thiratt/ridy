@@ -1,4 +1,4 @@
-import 'package:app/pages/auth/signup_selection.dart';
+import 'package:app/pages/auth/signup/page.dart';
 import 'package:app/widgets/text_field.dart';
 import 'package:app/widgets/button.dart';
 import 'package:flutter/gestures.dart';
