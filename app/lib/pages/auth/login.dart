@@ -1,3 +1,4 @@
+import 'package:app/pages/auth/signup_selection.dart';
 import 'package:app/widgets/text_field.dart';
 import 'package:app/widgets/button.dart';
 import 'package:flutter/gestures.dart';
@@ -97,7 +98,13 @@ class _LoginPageState extends State<LoginPage> {
                       decoration: TextDecoration.underline,
                       fontWeight: FontWeight.w600,
                     ),
-                    recognizer: TapGestureRecognizer()..onTap = () {},
+                    recognizer: TapGestureRecognizer()
+                      ..onTap = () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const SignupSelection(),
+                        ),
+                      ),
                   ),
                 ],
               ),

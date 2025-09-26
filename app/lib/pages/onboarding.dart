@@ -1,4 +1,5 @@
 import 'package:app/pages/auth/login.dart';
+import 'package:app/pages/auth/signup_selection.dart';
 import 'package:app/widgets/button.dart';
 import 'package:flutter/material.dart';
 
@@ -47,7 +48,15 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
                     MaterialPageRoute(builder: (context) => const LoginPage()),
                   ),
                 ),
-                OutlinedAppButton(text: "สมัครสมาชิก", onPressed: () {}),
+                OutlinedAppButton(
+                  text: "สมัครสมาชิก",
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SignupSelection(),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
