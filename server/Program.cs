@@ -39,7 +39,11 @@ namespace Server
                     throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
                 }
 
-                options.UseMySQL(connectionString);
+                options.UseMySql(
+                    connectionString,
+                    ServerVersion.AutoDetect(connectionString),
+                    mySqlOptions => mySqlOptions.UseNetTopologySuite()
+                );
             });
 
             services.AddRateLimiter(options =>
@@ -67,7 +71,8 @@ namespace Server
                 o =>
                 {
                     // o.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault | JsonIgnoreCondition.WhenWritingNull;
-                    o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+                    o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.SnakeCaseLower));
+                    o.JsonSerializerOptions.NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals;
                 }
             );
         }

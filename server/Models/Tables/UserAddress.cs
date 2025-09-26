@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using NetTopologySuite.Geometries;
 
 namespace server.Models.Tables;
 
@@ -12,6 +13,8 @@ public partial class UserAddress
     public string? Label { get; set; }
 
     public string AddressText { get; set; } = null!;
+
+    public Point Location { get; set; } = null!;
 
     public DateTime CreatedAt { get; set; }
 

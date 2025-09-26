@@ -7,7 +7,7 @@ public partial class Account
 {
     public Guid Id { get; set; }
 
-    public string Phone { get; set; } = null!;
+    public string PhoneNumber { get; set; } = null!;
 
     public string PasswordHash { get; set; } = null!;
 

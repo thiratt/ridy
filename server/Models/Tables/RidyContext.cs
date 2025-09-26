@@ -27,22 +27,24 @@ public partial class RidyContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder
+            .UseCollation("utf8mb4_0900_ai_ci")
+            .HasCharSet("utf8mb4");
+
         modelBuilder.Entity<Account>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PRIMARY");
 
             entity.ToTable("account");
 
-            entity.HasIndex(e => e.Phone, "phone").IsUnique();
+            entity.HasIndex(e => e.PhoneNumber, "phone").IsUnique();
 
-            entity.Property(e => e.Id)
-                .HasDefaultValueSql("'uuid()'")
-                .HasColumnName("id");
+            entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.AvatarUrl)
                 .HasMaxLength(255)
                 .HasColumnName("avatar_url");
             entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("'CURRENT_TIMESTAMP(3)'")
+                .HasDefaultValueSql("CURRENT_TIMESTAMP(3)")
                 .HasColumnType("timestamp(3)")
                 .HasColumnName("created_at");
             entity.Property(e => e.Firstname)
@@ -54,16 +56,15 @@ public partial class RidyContext : DbContext
             entity.Property(e => e.PasswordHash)
                 .HasColumnType("text")
                 .HasColumnName("password_hash");
-            entity.Property(e => e.Phone)
+            entity.Property(e => e.PhoneNumber)
                 .HasMaxLength(10)
-                .HasColumnName("phone");
+                .HasColumnName("phone_number");
             entity.Property(e => e.Role)
-                .HasDefaultValueSql("'USER'")
                 .HasColumnType("enum('USER','RIDER')")
                 .HasColumnName("role");
             entity.Property(e => e.UpdatedAt)
                 .ValueGeneratedOnAddOrUpdate()
-                .HasDefaultValueSql("'CURRENT_TIMESTAMP(3)'")
+                .HasDefaultValueSql("CURRENT_TIMESTAMP(3)")
                 .HasColumnType("timestamp(3)")
                 .HasColumnName("updated_at");
         });
@@ -86,15 +87,13 @@ public partial class RidyContext : DbContext
 
             entity.HasIndex(e => new { e.Id, e.RiderId }, "uq_delivery_rider_once").IsUnique();
 
-            entity.Property(e => e.Id)
-                .HasDefaultValueSql("'uuid()'")
-                .HasColumnName("id");
+            entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.BaseStatus)
                 .HasDefaultValueSql("'WAITING'")
                 .HasColumnType("enum('WAITING','ACCEPTED','PICKED_UP','DELIVERED')")
                 .HasColumnName("base_status");
             entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("'CURRENT_TIMESTAMP(3)'")
+                .HasDefaultValueSql("CURRENT_TIMESTAMP(3)")
                 .HasColumnType("timestamp(3)")
                 .HasColumnName("created_at");
             entity.Property(e => e.DropoffAddressId).HasColumnName("dropoff_address_id");
@@ -104,7 +103,7 @@ public partial class RidyContext : DbContext
             entity.Property(e => e.SenderId).HasColumnName("sender_id");
             entity.Property(e => e.UpdatedAt)
                 .ValueGeneratedOnAddOrUpdate()
-                .HasDefaultValueSql("'CURRENT_TIMESTAMP(3)'")
+                .HasDefaultValueSql("CURRENT_TIMESTAMP(3)")
                 .HasColumnType("timestamp(3)")
                 .HasColumnName("updated_at");
 
@@ -140,7 +139,7 @@ public partial class RidyContext : DbContext
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("'CURRENT_TIMESTAMP(3)'")
+                .HasDefaultValueSql("CURRENT_TIMESTAMP(3)")
                 .HasColumnType("timestamp(3)")
                 .HasColumnName("created_at");
             entity.Property(e => e.DeliveryId).HasColumnName("delivery_id");
@@ -164,10 +163,12 @@ public partial class RidyContext : DbContext
 
             entity.HasIndex(e => e.DeliveryId, "delivery_id").IsUnique();
 
-            entity.Property(e => e.RiderId).HasColumnName("rider_id");
+            entity.Property(e => e.RiderId)
+                .ValueGeneratedOnAdd()
+                .HasColumnName("rider_id");
             entity.Property(e => e.DeliveryId).HasColumnName("delivery_id");
             entity.Property(e => e.LockedAt)
-                .HasDefaultValueSql("'CURRENT_TIMESTAMP(3)'")
+                .HasDefaultValueSql("CURRENT_TIMESTAMP(3)")
                 .HasColumnType("timestamp(3)")
                 .HasColumnName("locked_at");
 
@@ -187,7 +188,7 @@ public partial class RidyContext : DbContext
             entity.ToTable("rider_profile");
 
             entity.Property(e => e.RiderId)
-                .HasDefaultValueSql("'uuid()'")
+                .ValueGeneratedOnAdd()
                 .HasColumnName("rider_id");
             entity.Property(e => e.VehiclePhotoUrl)
                 .HasMaxLength(255)
@@ -214,12 +215,13 @@ public partial class RidyContext : DbContext
                 .HasMaxLength(400)
                 .HasColumnName("address_text");
             entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("'CURRENT_TIMESTAMP(3)'")
+                .HasDefaultValueSql("CURRENT_TIMESTAMP(3)")
                 .HasColumnType("timestamp(3)")
                 .HasColumnName("created_at");
             entity.Property(e => e.Label)
                 .HasMaxLength(60)
                 .HasColumnName("label");
+            entity.Property(e => e.Location).HasColumnName("location");
             entity.Property(e => e.UserId).HasColumnName("user_id");
 
             entity.HasOne(d => d.User).WithMany(p => p.UserAddresses)
@@ -240,9 +242,12 @@ public partial class RidyContext : DbContext
                 .HasMaxLength(400)
                 .HasColumnName("address_text");
             entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("'CURRENT_TIMESTAMP(3)'")
+                .HasDefaultValueSql("CURRENT_TIMESTAMP(3)")
                 .HasColumnType("timestamp(3)")
                 .HasColumnName("created_at");
+            entity.Property(e => e.Location)
+                .HasAnnotation("MySql:SpatialReferenceSystemId", 4326)
+                .HasColumnName("location");
             entity.Property(e => e.UserId).HasColumnName("user_id");
 
             entity.HasOne(d => d.User).WithMany(p => p.UserPickupAddresses)
