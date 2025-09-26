@@ -85,7 +85,7 @@ namespace server.Controllers
             return Ok(successResponse);
         }
 
-        [HttpPost]
+        [HttpPost("register")]
         public async Task<IActionResult> CreateAccount([FromForm] CreateAccountRequest request)
         {
             try
