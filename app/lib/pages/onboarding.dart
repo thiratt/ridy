@@ -2,14 +2,14 @@ import 'package:app/pages/auth/login.dart';
 import 'package:app/widgets/button.dart';
 import 'package:flutter/material.dart';
 
-class SelectActionPage extends StatefulWidget {
-  const SelectActionPage({super.key});
+class OnBoardingPage extends StatefulWidget {
+  const OnBoardingPage({super.key});
 
   @override
-  State<SelectActionPage> createState() => _SelectActionPageState();
+  State<OnBoardingPage> createState() => _OnBoardingPageState();
 }
 
-class _SelectActionPageState extends State<SelectActionPage> {
+class _OnBoardingPageState extends State<OnBoardingPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(

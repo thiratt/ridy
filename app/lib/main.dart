@@ -1,4 +1,4 @@
-import 'package:app/pages/auth/select_action.dart';
+import 'package:app/pages/onboarding.dart';
 import 'package:app/themes/app_theme.dart';
 import 'package:flutter/material.dart';
 
@@ -15,7 +15,7 @@ class MyApp extends StatelessWidget {
       title: 'Flutter Demo',
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
-      home: const SelectActionPage(),
+      home: const OnBoardingPage(),
     );
   }
 }
