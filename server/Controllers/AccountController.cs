@@ -85,6 +85,36 @@ namespace server.Controllers
             return Ok(successResponse);
         }
 
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginRequest request)
+        {
+            var account = await _context.Accounts
+                .FirstOrDefaultAsync(a => a.PhoneNumber == request.PhoneNumber);
+
+            if (account == null || !await Argon2HashingUtil.Verify(request.Password, account.PasswordHash))
+            {
+                var errorResponse = new Models.Response.ErrorResponse
+                {
+                    Status = Models.Enum.ResponseStatus.Fail,
+                    Message = "Invalid phone number or password",
+                    Details = new { request.PhoneNumber }
+                };
+
+                return Unauthorized(errorResponse);
+            }
+
+            return Ok(new Models.Response.SuccessResponse
+            {
+                Status = Models.Enum.ResponseStatus.Success,
+                Message = "Login successful",
+                Data = new
+                {
+                    id = account.Id,
+                    role = account.Role
+                }
+            });
+        }
+
         [HttpPost("register")]
         public async Task<IActionResult> CreateAccount([FromForm] CreateAccountRequest request)
         {
