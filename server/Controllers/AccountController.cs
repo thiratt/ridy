@@ -9,11 +9,32 @@ namespace server.Controllers
     public class AccountController(RidyContext context) : ControllerBase
     {
         private readonly RidyContext _context = context;
-        [HttpGet]
-        public async Task<IActionResult> GetAccounts()
+
+        [HttpGet("{id:guid}")]
+        public async Task<IActionResult> GetAccountById(Guid id)
         {
-            var accounts = await _context.Accounts.ToListAsync();
-            return Ok(accounts);
+            var account = await _context.Accounts.FirstOrDefaultAsync(a => a.Id == id);
+
+            if (account == null)
+            {
+                var errorResponse = new Models.Response.ErrorResponse
+                {
+                    Status = Models.Enum.ResponseStatus.Fail,
+                    Message = "Account not found",
+                    Details = new { AccountId = id }
+                };
+
+                return NotFound(errorResponse);
+            }
+            
+            var successResponse = new Models.Response.SuccessResponse
+            {
+                Status = Models.Enum.ResponseStatus.Success,
+                Message = "Account retrieved successfully",
+                Data = account
+            };
+
+            return Ok(successResponse);
         }
     }
 }

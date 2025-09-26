@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.RateLimiting;
 using server.Models.Tables;
 using server.Utils;
+using System.Text.Json;
 
 namespace Server
 {
@@ -63,8 +64,11 @@ namespace Server
             services.AddHttpClient();
             services.AddControllers()
             .AddJsonOptions(
-                o => o.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault |
-                JsonIgnoreCondition.WhenWritingNull
+                o =>
+                {
+                    // o.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault | JsonIgnoreCondition.WhenWritingNull;
+                    o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+                }
             );
         }
 
