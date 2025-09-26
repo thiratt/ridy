@@ -1,26 +1,100 @@
-var builder = WebApplication.CreateBuilder(args);
+using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.DataProtection.AuthenticatedEncryption;
+using Microsoft.AspNetCore.DataProtection.AuthenticatedEncryption.ConfigurationModel;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.RateLimiting;
+using server.Models.Tables;
 
-// Add services to the container.
-
-builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
-
-var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+namespace Server
 {
-    app.MapOpenApi();
+    public class Program
+    {
+        public static void Main(string[] args)
+        {
+            var builder = WebApplication.CreateBuilder(args);
+
+            ConfigureServices(builder.Services);
+
+            var app = builder.Build();
+
+            ConfigureMiddleware(app);
+
+            app.Run();
+        }
+
+        private static void ConfigureServices(IServiceCollection services)
+        {
+            services.AddControllers();
+            services.AddEndpointsApiExplorer();
+            services.AddOpenApi();
+
+            services.AddDataProtection().UseCryptographicAlgorithms(
+                new AuthenticatedEncryptorConfiguration
+                {
+                    EncryptionAlgorithm = EncryptionAlgorithm.AES_256_CBC,
+                    ValidationAlgorithm = ValidationAlgorithm.HMACSHA512
+                }
+            );
+
+            services.AddDbContext<RidyContext>(options =>
+            {
+                var connectionString = services.BuildServiceProvider().GetRequiredService<IConfiguration>().GetConnectionString("DefaultConnection");
+                if (string.IsNullOrEmpty(connectionString))
+                {
+                    throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+                }
+
+                options.UseMySQL(connectionString);
+            });
+
+            services.AddRateLimiter(options =>
+            {
+                options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+                options.AddFixedWindowLimiter("LoginPolicy", opt =>
+                {
+                    opt.PermitLimit = 5;
+                    opt.Window = TimeSpan.FromMinutes(1);
+                    // opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+                    opt.QueueLimit = 0;
+                });
+                options.AddFixedWindowLimiter("ApiGlobalPolicy", opt =>
+                {
+                    opt.PermitLimit = 100;
+                    opt.Window = TimeSpan.FromMinutes(1);
+                    opt.QueueLimit = 0;
+                });
+            });
+
+            services.AddProblemDetails();
+            services.AddHttpClient();
+            services.AddControllers()
+            .AddJsonOptions(
+                o => o.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault |
+                JsonIgnoreCondition.WhenWritingNull
+            );
+        }
+
+        private static void ConfigureMiddleware(WebApplication app)
+        {
+            if (app.Environment.IsDevelopment())
+            {
+                app.MapOpenApi();
+                app.UseDeveloperExceptionPage();
+            }
+            else
+            {
+                app.UseExceptionHandler("/error");
+                app.UseHsts();
+                app.UseHttpsRedirection();
+            }
+
+            app.UseStatusCodePages();
+            app.UseRateLimiter();
+            app.UseAuthentication();
+            app.UseAuthorization();
+            app.UseWebSockets();
+            app.MapControllers();
+        }
+    }
 }
-else
-{
-    app.UseHttpsRedirection();
-
-}
-
-app.UseAuthorization();
-
-app.MapControllers();
-
-app.Run();
