@@ -28,6 +28,37 @@ class PrimaryButton extends StatelessWidget {
   }
 }
 
+class GhostButton extends StatelessWidget {
+  final String text;
+  final VoidCallback onPressed;
+  final bool fullWidth;
+
+  const GhostButton({
+    super.key,
+    required this.text,
+    required this.onPressed,
+    this.fullWidth = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final btn = TextButton(
+      onPressed: onPressed,
+      style: TextButton.styleFrom(
+        foregroundColor: AppTheme.light.colorScheme.onSurface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+      child: Text(text, style: const TextStyle(fontSize: 16)),
+    );
+
+    if (fullWidth) {
+      return SizedBox(height: 56, width: double.infinity, child: btn);
+    }
+
+    return btn; // ความกว้างเท่าข้อความ
+  }
+}
+
 class OutlinedAppButton extends StatelessWidget {
   final String text;
   final VoidCallback onPressed;
