@@ -5,6 +5,7 @@ using NetTopologySuite.Geometries;
 using server.Models.Request;
 using server.Models.Tables;
 using server.Utils;
+using Soenneker.Extensions.String;
 using Soenneker.Hashing.Argon2;
 
 namespace server.Controllers
@@ -115,15 +116,15 @@ namespace server.Controllers
                     CreatedAt = DateTime.UtcNow
                 };
 
-                if (request.Role.ToUpper() == "RIDER")
+                if (request.Role.EqualsIgnoreCase("RIDER"))
                 {
-                    string VehiclePlate = request.VehiclePlate ?? throw new ArgumentNullException("VehiclePlate is required for Rider role");
-                    IFormFile VehiclePhotoData = request.VehiclePhotoData ?? throw new ArgumentNullException(nameof(request));
+                    string VehiclePlate = request.VehiclePlate ?? throw new ArgumentNullException(nameof(request.VehiclePlate));
+                    IFormFile VehiclePhotoData = request.VehiclePhotoData ?? throw new ArgumentNullException(nameof(request.VehiclePhotoData));
 
                     string vehiclePhotoFilePath = SaveFile.Save(VehiclePhotoData);
                     string VehiclePhotoUrl = Environment.GetEnvironmentVariable("BASE_URL") + "/image/" + vehiclePhotoFilePath.Replace("\\", "/");
 
-                    newAccount.RiderProfile = new RiderProfile
+                    var riderProfile = new RiderProfile
                     {
                         RiderId = newAccount.Id,
                         VehiclePlate = VehiclePlate,
@@ -131,17 +132,20 @@ namespace server.Controllers
                     };
 
                     _context.Accounts.Add(newAccount);
-                    _context.RiderProfiles.Add(newAccount.RiderProfile);
+                    _context.RiderProfiles.Add(riderProfile);
                     await _context.SaveChangesAsync();
 
                     var riderResponse = new Models.Response.SuccessResponse
                     {
                         Status = Models.Enum.ResponseStatus.Success,
                         Message = "Rider account created successfully",
-                        Data = newAccount
+                        Data = new
+                        {
+                            id = newAccount.Id,
+                        }
                     };
 
-                    return CreatedAtAction(nameof(GetAccountById), new { id = newAccount.Id }, riderResponse);
+                    return Ok(riderResponse);
                 }
 
                 if (
@@ -197,9 +201,20 @@ namespace server.Controllers
 
                 return Ok(successResponse);
             }
-            catch (System.Exception)
+            catch (ArgumentNullException ex)
             {
+                var errorResponse = new Models.Response.ErrorResponse
+                {
+                    Status = Models.Enum.ResponseStatus.Fail,
+                    Message = ex.Message,
+                    Details = null
+                };
 
+                return BadRequest(errorResponse);
+            }
+            catch (System.Exception ex)
+            {
+                Console.WriteLine(ex);
                 var errorResponse = new Models.Response.ErrorResponse
                 {
                     Status = Models.Enum.ResponseStatus.Error,
