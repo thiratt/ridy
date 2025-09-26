@@ -25,8 +25,8 @@ class PrimaryTextField extends StatelessWidget {
         labelText: label,
         filled: true,
         contentPadding: const EdgeInsets.symmetric(
-          vertical: 20,
-          horizontal: 16,
+          vertical: 18,
+          horizontal: 14,
         ),
         fillColor: AppTheme.light.colorScheme.surfaceContainerLow,
         enabledBorder: OutlineInputBorder(
