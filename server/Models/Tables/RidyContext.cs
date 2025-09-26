@@ -35,7 +35,9 @@ public partial class RidyContext : DbContext
 
             entity.HasIndex(e => e.Phone, "phone").IsUnique();
 
-            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("'uuid()'")
+                .HasColumnName("id");
             entity.Property(e => e.AvatarUrl)
                 .HasMaxLength(255)
                 .HasColumnName("avatar_url");
@@ -44,10 +46,10 @@ public partial class RidyContext : DbContext
                 .HasColumnType("timestamp(3)")
                 .HasColumnName("created_at");
             entity.Property(e => e.Firstname)
-                .HasMaxLength(100)
+                .HasMaxLength(30)
                 .HasColumnName("firstname");
             entity.Property(e => e.Lastname)
-                .HasMaxLength(100)
+                .HasMaxLength(30)
                 .HasColumnName("lastname");
             entity.Property(e => e.PasswordHash)
                 .HasColumnType("text")
@@ -84,7 +86,9 @@ public partial class RidyContext : DbContext
 
             entity.HasIndex(e => new { e.Id, e.RiderId }, "uq_delivery_rider_once").IsUnique();
 
-            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("'uuid()'")
+                .HasColumnName("id");
             entity.Property(e => e.BaseStatus)
                 .HasDefaultValueSql("'WAITING'")
                 .HasColumnType("enum('WAITING','ACCEPTED','PICKED_UP','DELIVERED')")
@@ -182,12 +186,14 @@ public partial class RidyContext : DbContext
 
             entity.ToTable("rider_profile");
 
-            entity.Property(e => e.RiderId).HasColumnName("rider_id");
+            entity.Property(e => e.RiderId)
+                .HasDefaultValueSql("'uuid()'")
+                .HasColumnName("rider_id");
             entity.Property(e => e.VehiclePhotoUrl)
                 .HasMaxLength(255)
                 .HasColumnName("vehicle_photo_url");
             entity.Property(e => e.VehiclePlate)
-                .HasMaxLength(100)
+                .HasMaxLength(50)
                 .HasColumnName("vehicle_plate");
 
             entity.HasOne(d => d.Rider).WithOne(p => p.RiderProfile)
