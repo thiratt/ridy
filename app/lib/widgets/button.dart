@@ -4,8 +4,14 @@ import 'package:flutter/material.dart';
 class PrimaryButton extends StatelessWidget {
   final String text;
   final VoidCallback onPressed;
+  final bool disabled;
 
-  const PrimaryButton({super.key, required this.text, required this.onPressed});
+  const PrimaryButton({
+    super.key,
+    required this.text,
+    required this.onPressed,
+    this.disabled = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -13,9 +19,11 @@ class PrimaryButton extends StatelessWidget {
       width: double.infinity,
       height: 56,
       child: FilledButton(
-        onPressed: onPressed,
+        onPressed: disabled ? null : onPressed,
         style: FilledButton.styleFrom(
-          backgroundColor: AppTheme.light.colorScheme.primary,
+          backgroundColor: disabled
+              ? AppTheme.light.colorScheme.onSurface.withValues(alpha: 0.12)
+              : AppTheme.light.colorScheme.primary,
           foregroundColor: AppTheme.light.colorScheme.onPrimary,
           side: BorderSide(color: AppTheme.light.colorScheme.onPrimary),
           shape: RoundedRectangleBorder(
