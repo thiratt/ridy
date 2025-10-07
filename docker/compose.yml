@@ -1,0 +1,33 @@
+name: ridy
+
+services:
+    db:
+        image: mysql:8.4.6
+        env_file:
+            - .env
+        volumes:
+            - ridy-db:/var/lib/mysql
+        command: ["--log_bin_trust_function_creators=1"]
+
+    api:
+        image: ridy:latest
+        env_file:
+            - .env
+        volumes:
+            - ridy-api:/app/uploads
+        depends_on:
+            - db
+
+    # Coming soon
+    # nginx:
+    #     image: nginx:latest
+    #     ports:
+    #         - "80:80"
+    #     volumes:
+    #         - ./nginx/conf.d:/etc/nginx/conf.d
+    #     depends_on:
+    #         - api
+
+volumes:
+    ridy-db:
+    ridy-api:

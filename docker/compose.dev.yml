@@ -1,0 +1,38 @@
+name: ridy-dev
+
+services:
+    db:
+        image: mysql:8.4.6
+        env_file:
+            - .env
+        volumes:
+            - ridy-db-dev:/var/lib/mysql
+        command: ["--log_bin_trust_function_creators=1"]
+
+    api:
+        image: ridy:latest
+        ports:
+            - "7770:8080"
+        env_file:
+            - .env
+        volumes:
+            - ridy-api-dev:/app/uploads
+        depends_on:
+            - db
+
+    phpmyadmin:
+        image: phpmyadmin
+        ports:
+            - 7771:80
+        # volumes:
+        #     - ../assets/testdee-theme/config.user.inc.php:/etc/phpmyadmin/config.user.inc.php:ro
+        #     - ../assets/testdee-theme:/var/www/html/themes/testdee:ro
+        environment:
+            - PMA_HOST=db
+            - PMA_PORT=3306
+        depends_on:
+            - db
+
+volumes:
+    ridy-db-dev:
+    ridy-api-dev:
