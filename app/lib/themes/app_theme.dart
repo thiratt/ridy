@@ -34,6 +34,7 @@ abstract final class AppTheme {
     // Direct ThemeData properties.
     visualDensity: FlexColorScheme.comfortablePlatformDensity,
     cupertinoOverrideTheme: const CupertinoThemeData(applyThemeToAll: true),
+    fontFamily: 'LINESeedSansTH',
   );
 
   // The FlexColorScheme defined dark mode ThemeData.
