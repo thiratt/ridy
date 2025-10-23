@@ -192,7 +192,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _navigateToSignup() async {
-    if (!mounted) return;
+    if (!mounted || _isLoading) return;
 
     try {
       _clearErrorMessage();
@@ -254,10 +254,7 @@ class _LoginPageState extends State<LoginPage> {
   Widget _buildHeader() {
     return Column(
       children: [
-        Semantics(
-          label: 'โลโก้แอปพลิเคชัน Ridy',
-          child: Image.asset(_logoPath, width: 120, height: 120),
-        ),
+        Image.asset(_logoPath, width: 120, height: 120),
         const SizedBox(height: 16),
         const Text(
           "เข้าสู่ระบบ",
