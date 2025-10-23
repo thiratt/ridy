@@ -1,7 +1,11 @@
 import 'package:flutter/cupertino.dart';
 
-void navigateTo(BuildContext context, Widget page, String routeName) {
-  Navigator.push(
+Future<T> navigateTo<T extends Object?>(
+  BuildContext context,
+  Widget page,
+  String routeName,
+) async {
+  return await Navigator.push(
     context,
     CupertinoPageRoute(
       builder: (_) => page,
