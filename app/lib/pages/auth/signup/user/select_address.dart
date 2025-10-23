@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'package:app/utils/env.dart';
 import 'package:app/widgets/button.dart';
 import 'package:app/widgets/location_dot.dart';
 import 'package:flutter/material.dart';
@@ -23,10 +24,10 @@ class _LocationConfig {
   static const Duration locationTimeout = Duration(seconds: 10);
 
   static const String localeIdentifier = "th_TH";
-
-  static const String tileUrlTemplate =
-      'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
   static const String userAgentPackageName = 'app.ridy';
+
+  static String tileUrlTemplate =
+      'https://tile.thunderforest.com/atlas/{z}/{x}/{y}.png?apikey=${getEnv('THUNDER_FOREST_API_KEY')}';
 }
 
 class _LocationErrorMessages {

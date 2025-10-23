@@ -8,8 +8,10 @@ import 'package:app/pages/auth/signup/user/select_address.dart';
 import 'package:app/pages/onboarding.dart';
 import 'package:app/themes/app_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-void main() {
+Future<void> main() async {
+  await dotenv.load();
   runApp(const RidyApplication());
 }
 
