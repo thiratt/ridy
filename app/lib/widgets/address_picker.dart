@@ -17,9 +17,8 @@ class AddressPickerTile extends StatelessWidget {
     final theme = Theme.of(context);
     final hasValue = (value != null && value!.trim().isNotEmpty);
 
-    return Semantics(
-      button: true,
-      label: hasValue ? 'ที่อยู่: $value' : 'แตะเพื่อเลือก$placeholder',
+    return Material(
+      borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
@@ -27,7 +26,6 @@ class AddressPickerTile extends StatelessWidget {
           constraints: const BoxConstraints(minHeight: 100),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerLow,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: hasValue
