@@ -2,6 +2,7 @@ import 'package:app/models/request/login_request.dart';
 import 'package:app/models/response/login_response.dart';
 import 'package:app/pages/auth/signup/page.dart';
 import 'package:app/pages/home/rider/page.dart';
+import 'package:app/utils/navigation.dart';
 import 'package:app/widgets/home_wrapper.dart';
 import 'package:app/widgets/text_field.dart';
 import 'package:app/widgets/button.dart';
@@ -85,7 +86,7 @@ class _LoginPageState extends State<LoginPage> {
     try {
       await _performLogin();
     } catch (e) {
-      _handleLoginError(e.toString());
+      _errorMessage = e.toString();
     } finally {
       if (mounted) {
         setState(() {
@@ -155,28 +156,6 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  void _handleLoginError(String error) {
-    setState(() {
-      _errorMessage = error;
-    });
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(error),
-          backgroundColor: Theme.of(context).colorScheme.error,
-          behavior: SnackBarBehavior.floating,
-          action: SnackBarAction(
-            label: 'ปิด',
-            onPressed: () {
-              ScaffoldMessenger.of(context).hideCurrentSnackBar();
-            },
-          ),
-        ),
-      );
-    }
-  }
-
   void _clearErrorMessage() {
     if (_errorMessage != null && mounted) {
       setState(() {
@@ -197,10 +176,7 @@ class _LoginPageState extends State<LoginPage> {
     try {
       _clearErrorMessage();
 
-      await Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const SignupSelection()),
-      );
+      navigateTo(context, const SignupSelection(), "/auth/signup");
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -233,11 +209,11 @@ class _LoginPageState extends State<LoginPage> {
                 child: Form(
                   key: _formKey,
                   child: Column(
-                    spacing: 48,
+                    spacing: 32,
                     children: [
                       _buildHeader(),
-                      _buildLoginForm(),
                       if (_errorMessage != null) _buildErrorMessage(theme),
+                      _buildLoginForm(),
                     ],
                   ),
                 ),
@@ -314,6 +290,21 @@ class _LoginPageState extends State<LoginPage> {
               style: TextStyle(
                 color: theme.colorScheme.onErrorContainer,
                 fontSize: 14,
+              ),
+            ),
+          ),
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(24),
+              onTap: () => _clearErrorMessage(),
+              child: Padding(
+                padding: const EdgeInsets.all(4.0),
+                child: Icon(
+                  Icons.close,
+                  size: 20,
+                  color: theme.colorScheme.onErrorContainer,
+                ),
               ),
             ),
           ),
