@@ -149,10 +149,11 @@ class _LoginPageState extends State<LoginPage> {
         ? HomeWrapper(uid: userId)
         : RiderHomePage(uid: userId);
 
-    await Navigator.pushAndRemoveUntil(
+    await navigateReplaceTo(
       context,
-      MaterialPageRoute(builder: (context) => homePage),
-      (route) => false,
+      homePage,
+      '/home/$role'.toLowerCase(),
+      useDefaultTransition: true,
     );
   }
 
