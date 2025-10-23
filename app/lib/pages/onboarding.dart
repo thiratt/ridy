@@ -1,5 +1,6 @@
 import 'package:app/pages/auth/login/page.dart';
 import 'package:app/pages/auth/signup/page.dart';
+import 'package:app/utils/navigation.dart';
 import 'package:app/widgets/button.dart';
 import 'package:flutter/material.dart';
 
@@ -43,19 +44,11 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
               children: [
                 PrimaryButton(
                   text: "เข้าสู่ระบบ",
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const LoginPage()),
-                  ),
+                  onPressed: () => navigateTo(context, const LoginPage(), "/auth/login"),
                 ),
                 OutlinedAppButton(
                   text: "สมัครสมาชิก",
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const SignupSelection(),
-                    ),
-                  ),
+                  onPressed: () => navigateTo(context, const SignupSelection(), "/auth/signup"),
                 ),
               ],
             ),

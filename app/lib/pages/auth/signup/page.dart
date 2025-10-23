@@ -1,5 +1,6 @@
 import 'package:app/pages/auth/signup/rider/page.dart';
 import 'package:app/pages/auth/signup/user/page.dart';
+import 'package:app/utils/navigation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:app/widgets/button.dart';
@@ -20,10 +21,7 @@ class _SignupSelectionState extends State<SignupSelection> {
 
   Future<void> _navigateToUserSignup() async {
     try {
-      await Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const UserSignupPage()),
-      );
+      navigateTo(context, const UserSignupPage(), "/auth/signup/user");
     } catch (e) {
       if (mounted) {
         _showNavigationError('เกิดข้อผิดพลาดในการเปิดหน้าสมัครสมาชิกผู้ใช้งาน');
@@ -33,10 +31,7 @@ class _SignupSelectionState extends State<SignupSelection> {
 
   Future<void> _navigateToRiderSignup() async {
     try {
-      await Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const RiderSignupPage()),
-      );
+      navigateTo(context, const RiderSignupPage(), "/auth/signup/rider");
     } catch (e) {
       if (mounted) {
         _showNavigationError('เกิดข้อผิดพลาดในการเปิดหน้าสมัครสมาชิกไรเดอร์');

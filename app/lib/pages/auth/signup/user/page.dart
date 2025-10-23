@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:app/models/user_signup_draft.dart';
-import 'package:app/pages/auth/login/page.dart';
 import 'package:app/pages/auth/signup/user/add_address.dart';
+import 'package:app/utils/navigation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -211,7 +211,7 @@ class _UserSignupPageState extends State<UserSignupPage> {
     FocusScope.of(context).unfocus();
 
     if (!_formKey.currentState!.validate()) {
-      _showErrorMessage('กรุณาตรวจสอบข้อมูลที่กรอกให้ถูกต้อง');
+      // _showErrorMessage('กรุณาตรวจสอบข้อมูลที่กรอกให้ถูกต้อง');
       return;
     }
 
@@ -231,11 +231,10 @@ class _UserSignupPageState extends State<UserSignupPage> {
         avatar: _avatar!,
       );
 
-      await Navigator.push(
+      navigateTo(
         context,
-        MaterialPageRoute(
-          builder: (context) => UserSignupAddAddressPage(draft: draft),
-        ),
+        UserSignupAddAddressPage(draft: draft),
+        "/auth/signup/user/address",
       );
     } catch (e) {
       if (mounted) {
@@ -246,10 +245,7 @@ class _UserSignupPageState extends State<UserSignupPage> {
 
   Future<void> _navigateToLogin() async {
     try {
-      await Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginPage()),
-      );
+      Navigator.popUntil(context, ModalRoute.withName("/auth/login"));
     } catch (e) {
       if (mounted) {
         _showErrorMessage('เกิดข้อผิดพลาดในการเปิดหน้าเข้าสู่ระบบ');
