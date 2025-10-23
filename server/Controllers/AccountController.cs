@@ -178,44 +178,110 @@ namespace server.Controllers
                     return Ok(riderResponse);
                 }
 
-                if (
-                    string.IsNullOrEmpty(request.AddressText) ||
-                    string.IsNullOrEmpty(request.AddressLabel) ||
-                    request.AddressLatitude == null ||
-                    request.AddressLongitude == null ||
-                    string.IsNullOrEmpty(request.PickupAddressText) ||
-                    request.PickupAddressLatitude == null ||
-                    request.PickupAddressLongitude == null
-                )
+                // Handle addresses - check if multi-address data is provided, otherwise use single address for backward compatibility
+                bool hasMultiAddresses = request.MainAddressTexts?.Length > 0 && request.PickupAddressTexts?.Length > 0;
+                bool hasSingleAddress = !string.IsNullOrEmpty(request.AddressText) && !string.IsNullOrEmpty(request.PickupAddressText);
+
+                if (!hasMultiAddresses && !hasSingleAddress)
                 {
                     var errorResponse = new Models.Response.ErrorResponse
                     {
                         Status = Models.Enum.ResponseStatus.Fail,
-                        Message = "Missing user-specific fields for User role",
+                        Message = "At least one main address and one pickup address are required for User role",
                         Details = null
                     };
 
                     return BadRequest(errorResponse);
                 }
 
-                var userAddress = new UserAddress
-                {
-                    UserId = newAccount.Id,
-                    AddressText = request.AddressText,
-                    Label = request.AddressLabel,
-                    Location = new Point(new Coordinate(request.AddressLongitude.Value, request.AddressLatitude.Value)) { SRID = 4326 },
-                };
-
-                var userPickupAddress = new UserPickupAddress
-                {
-                    UserId = newAccount.Id,
-                    AddressText = request.PickupAddressText,
-                    Location = new Point(new Coordinate(request.PickupAddressLongitude.Value, request.PickupAddressLatitude.Value)) { SRID = 4326 },
-                };
-
                 _context.Accounts.Add(newAccount);
-                _context.UserAddresses.Add(userAddress);
-                _context.UserPickupAddresses.Add(userPickupAddress);
+
+                if (hasMultiAddresses)
+                {
+                    if (request.MainAddressTexts!.Length != request.MainAddressLabels?.Length ||
+                        request.MainAddressTexts.Length != request.MainAddressLatitudes?.Length ||
+                        request.MainAddressTexts.Length != request.MainAddressLongitudes?.Length)
+                    {
+                        return BadRequest(new Models.Response.ErrorResponse
+                        {
+                            Status = Models.Enum.ResponseStatus.Fail,
+                            Message = "Main address arrays must have the same length",
+                            Details = null
+                        });
+                    }
+
+                    if (request.PickupAddressTexts!.Length != request.PickupAddressLatitudes?.Length ||
+                        request.PickupAddressTexts.Length != request.PickupAddressLongitudes?.Length)
+                    {
+                        return BadRequest(new Models.Response.ErrorResponse
+                        {
+                            Status = Models.Enum.ResponseStatus.Fail,
+                            Message = "Pickup address arrays must have the same length",
+                            Details = null
+                        });
+                    }
+
+                    for (int i = 0; i < request.MainAddressTexts.Length; i++)
+                    {
+                        var userAddress = new UserAddress
+                        {
+                            UserId = newAccount.Id,
+                            AddressText = request.MainAddressTexts[i],
+                            Label = request.MainAddressLabels?[i] ?? $"บ้าน {i + 1}",
+                            Location = new Point(new Coordinate(request.MainAddressLongitudes![i], request.MainAddressLatitudes![i])) { SRID = 4326 },
+                            CreatedAt = DateTime.UtcNow
+                        };
+                        _context.UserAddresses.Add(userAddress);
+                    }
+
+                    for (int i = 0; i < request.PickupAddressTexts.Length; i++)
+                    {
+                        var userPickupAddress = new UserPickupAddress
+                        {
+                            UserId = newAccount.Id,
+                            AddressText = request.PickupAddressTexts[i],
+                            Location = new Point(new Coordinate(request.PickupAddressLongitudes![i], request.PickupAddressLatitudes![i])) { SRID = 4326 },
+                            CreatedAt = DateTime.UtcNow
+                        };
+                        _context.UserPickupAddresses.Add(userPickupAddress);
+                    }
+                }
+                else
+                {
+                    if (string.IsNullOrEmpty(request.AddressLabel) ||
+                        request.AddressLatitude == null ||
+                        request.AddressLongitude == null ||
+                        request.PickupAddressLatitude == null ||
+                        request.PickupAddressLongitude == null)
+                    {
+                        return BadRequest(new Models.Response.ErrorResponse
+                        {
+                            Status = Models.Enum.ResponseStatus.Fail,
+                            Message = "Missing required address fields",
+                            Details = null
+                        });
+                    }
+
+                    var userAddress = new UserAddress
+                    {
+                        UserId = newAccount.Id,
+                        AddressText = request.AddressText!,
+                        Label = request.AddressLabel,
+                        Location = new Point(new Coordinate(request.AddressLongitude.Value, request.AddressLatitude.Value)) { SRID = 4326 },
+                        CreatedAt = DateTime.UtcNow
+                    };
+
+                    var userPickupAddress = new UserPickupAddress
+                    {
+                        UserId = newAccount.Id,
+                        AddressText = request.PickupAddressText!,
+                        Location = new Point(new Coordinate(request.PickupAddressLongitude.Value, request.PickupAddressLatitude.Value)) { SRID = 4326 },
+                        CreatedAt = DateTime.UtcNow
+                    };
+
+                    _context.UserAddresses.Add(userAddress);
+                    _context.UserPickupAddresses.Add(userPickupAddress);
+                }
 
                 await _context.SaveChangesAsync();
 
