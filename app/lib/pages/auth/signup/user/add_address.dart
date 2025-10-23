@@ -1,5 +1,6 @@
 import 'package:app/models/user_signup_draft.dart';
 import 'package:app/pages/auth/signup/user/select_address.dart';
+import 'package:app/utils/navigation.dart';
 import 'package:app/widgets/address_picker.dart';
 import 'package:app/widgets/home_wrapper.dart';
 import 'package:flutter/material.dart';
@@ -21,21 +22,37 @@ class _UserSignupAddAddressPageState extends State<UserSignupAddAddressPage> {
   final _formKey = GlobalKey<FormState>();
   final _aliasController = TextEditingController();
 
-  String? _mainAddress;
-  String? _pickupAddress;
+  final List<AddressInfo> _mainAddresses = [];
+  final List<AddressInfo> _pickupAddresses = [];
+
   bool _isLoading = false;
   bool _isSelectingAddress = false;
 
   static const String _titleText = 'เพิ่มที่อยู่';
   static const String _aliasLabel = 'ชื่อเล่นของที่อยู่ (เช่น บ้าน)';
-  static const String _mainAddressLabel = 'ที่อยู่';
+  static const String _mainAddressLabel = 'ที่อยู่หลัก';
   static const String _pickupAddressLabel = 'ที่อยู่ในการรับสินค้า';
-  static const String _mainAddressPlaceholder = 'ที่อยู่';
+  static const String _mainAddressPlaceholder = 'ที่อยู่หลัก';
   static const String _pickupAddressPlaceholder = 'ที่อยู่สำหรับรับสินค้า';
   static const String _createAccountButtonText = 'สร้างบัญชี';
   static const String _defaultMainLabel = 'บ้าน';
   static const String _defaultPickupLabel = 'รับสินค้า';
   static const String _apiEndpoint = 'http://10.0.2.2:5200/account/register';
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeAddresses();
+  }
+
+  void _initializeAddresses() {
+    if (widget.draft.main != null) {
+      _mainAddresses.add(widget.draft.main!);
+    }
+    if (widget.draft.pickup != null) {
+      _pickupAddresses.add(widget.draft.pickup!);
+    }
+  }
 
   @override
   void dispose() {
@@ -60,15 +77,20 @@ class _UserSignupAddAddressPageState extends State<UserSignupAddAddressPage> {
   }
 
   bool _validateAddresses() {
-    if (widget.draft.main == null) {
-      _showErrorMessage('กรุณาเลือกที่อยู่หลัก');
+    if (_mainAddresses.isEmpty) {
+      _showErrorMessage('กรุณาเลือกที่อยู่หลักอย่างน้อย 1 ที่อยู่');
       return false;
     }
 
-    if (widget.draft.pickup == null) {
-      _showErrorMessage('กรุณาเลือกที่อยู่สำหรับรับสินค้า');
+    if (_pickupAddresses.isEmpty) {
+      _showErrorMessage('กรุณาเลือกที่อยู่สำหรับรับสินค้าอย่างน้อย 1 ที่อยู่');
       return false;
     }
+
+    widget.draft.main = _mainAddresses.first;
+    widget.draft.pickup = _pickupAddresses.first;
+    widget.draft.mainAddresses = _mainAddresses;
+    widget.draft.pickupAddresses = _pickupAddresses;
 
     return true;
   }
@@ -112,25 +134,33 @@ class _UserSignupAddAddressPageState extends State<UserSignupAddAddressPage> {
     });
 
     try {
-      final result = await Navigator.push(
+      final result = await navigateTo(
         context,
-        MaterialPageRoute(builder: (context) => const SelectLocationPage()),
+        const SelectLocationPage(),
+        '/auth/signup/user/address/select',
       );
 
       if (result is SelectedLocation && mounted) {
         final aliasText = _aliasController.text.trim();
 
+        final newAddress = AddressInfo(
+          label: aliasText.isEmpty
+              ? '$_defaultMainLabel ${_mainAddresses.length + 1}'
+              : aliasText,
+          text: result.address ?? '${result.lat}, ${result.lng}',
+          lat: result.lat,
+          lng: result.lng,
+        );
+
         setState(() {
-          widget.draft.main = AddressInfo(
-            label: aliasText.isEmpty ? _defaultMainLabel : aliasText,
-            text: result.address ?? '${result.lat}, ${result.lng}',
-            lat: result.lat,
-            lng: result.lng,
-          );
-          _mainAddress = widget.draft.main!.text;
+          _mainAddresses.add(newAddress);
+          if (widget.draft.main == null) {
+            widget.draft.main = newAddress;
+          }
         });
 
-        _showSuccessMessage('เลือกที่อยู่หลักเรียบร้อยแล้ว');
+        _aliasController.clear();
+        _showSuccessMessage('เพิ่มที่อยู่หลักเรียบร้อยแล้ว');
       }
     } catch (e) {
       if (mounted) {
@@ -155,23 +185,28 @@ class _UserSignupAddAddressPageState extends State<UserSignupAddAddressPage> {
     });
 
     try {
-      final result = await Navigator.push(
+      final result = await navigateTo(
         context,
-        MaterialPageRoute(builder: (context) => const SelectLocationPage()),
+        const SelectLocationPage(),
+        '/auth/signup/user/address/select',
       );
 
       if (result is SelectedLocation && mounted) {
+        final newAddress = AddressInfo(
+          label: '$_defaultPickupLabel ${_pickupAddresses.length + 1}',
+          text: result.address ?? '${result.lat}, ${result.lng}',
+          lat: result.lat,
+          lng: result.lng,
+        );
+
         setState(() {
-          widget.draft.pickup = AddressInfo(
-            label: _defaultPickupLabel,
-            text: result.address ?? '${result.lat}, ${result.lng}',
-            lat: result.lat,
-            lng: result.lng,
-          );
-          _pickupAddress = widget.draft.pickup!.text;
+          _pickupAddresses.add(newAddress);
+          if (widget.draft.pickup == null) {
+            widget.draft.pickup = newAddress;
+          }
         });
 
-        _showSuccessMessage('เลือกที่อยู่รับสินค้าเรียบร้อยแล้ว');
+        _showSuccessMessage('เพิ่มที่อยู่รับสินค้าเรียบร้อยแล้ว');
       }
     } catch (e) {
       if (mounted) {
@@ -188,15 +223,79 @@ class _UserSignupAddAddressPageState extends State<UserSignupAddAddressPage> {
     }
   }
 
+  void _removeMainAddress(int index) {
+    _showRemoveConfirmation(
+      'ลบที่อยู่หลัก',
+      'คุณต้องการลบที่อยู่ "${_mainAddresses[index].label}" หรือไม่?',
+      () {
+        setState(() {
+          _mainAddresses.removeAt(index);
+          widget.draft.main = _mainAddresses.isNotEmpty
+              ? _mainAddresses.first
+              : null;
+        });
+        _showSuccessMessage('ลบที่อยู่หลักเรียบร้อยแล้ว');
+      },
+    );
+  }
+
+  void _removePickupAddress(int index) {
+    _showRemoveConfirmation(
+      'ลบที่อยู่รับสินค้า',
+      'คุณต้องการลบที่อยู่ "${_pickupAddresses[index].label}" หรือไม่?',
+      () {
+        setState(() {
+          _pickupAddresses.removeAt(index);
+          widget.draft.pickup = _pickupAddresses.isNotEmpty
+              ? _pickupAddresses.first
+              : null;
+        });
+        _showSuccessMessage('ลบที่อยู่รับสินค้าเรียบร้อยแล้ว');
+      },
+    );
+  }
+
+  void _showRemoveConfirmation(
+    String title,
+    String message,
+    VoidCallback onConfirm,
+  ) {
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(title),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('ยกเลิก'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                onConfirm();
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: Theme.of(context).colorScheme.error,
+              ),
+              child: const Text('ลบ'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future<void> _handleRegistration() async {
     if (_isLoading || !mounted) return;
 
-    // Validate form first
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    // Validate addresses
     if (!_validateAddresses()) {
       return;
     }
@@ -226,7 +325,7 @@ class _UserSignupAddAddressPageState extends State<UserSignupAddAddressPage> {
     dio.options.connectTimeout = const Duration(seconds: 30);
     dio.options.receiveTimeout = const Duration(seconds: 30);
 
-    final formData = FormData.fromMap({
+    final Map<String, dynamic> formDataMap = {
       'PhoneNumber': widget.draft.phone,
       'Password': widget.draft.password,
       'Firstname': widget.draft.firstname,
@@ -236,17 +335,51 @@ class _UserSignupAddAddressPageState extends State<UserSignupAddAddressPage> {
         widget.draft.avatar.path,
         filename: 'avatar.jpg',
       ),
-      // Main address
-      'AddressText': widget.draft.main!.text,
-      'AddressLabel': widget.draft.main!.label,
-      'AddressLatitude': widget.draft.main!.lat,
-      'AddressLongitude': widget.draft.main!.lng,
-      // Pickup address
-      'PickupAddressText': widget.draft.pickup!.text,
-      'PickupAddressLatitude': widget.draft.pickup!.lat,
-      'PickupAddressLongitude': widget.draft.pickup!.lng,
-    });
+    };
 
+    if (_mainAddresses.isNotEmpty) {
+      formDataMap['MainAddressTexts'] = _mainAddresses
+          .map((addr) => addr.text)
+          .toList();
+      formDataMap['MainAddressLabels'] = _mainAddresses
+          .map((addr) => addr.label)
+          .toList();
+      formDataMap['MainAddressLatitudes'] = _mainAddresses
+          .map((addr) => addr.lat)
+          .toList();
+      formDataMap['MainAddressLongitudes'] = _mainAddresses
+          .map((addr) => addr.lng)
+          .toList();
+    }
+
+    if (_pickupAddresses.isNotEmpty) {
+      formDataMap['PickupAddressTexts'] = _pickupAddresses
+          .map((addr) => addr.text)
+          .toList();
+      formDataMap['PickupAddressLatitudes'] = _pickupAddresses
+          .map((addr) => addr.lat)
+          .toList();
+      formDataMap['PickupAddressLongitudes'] = _pickupAddresses
+          .map((addr) => addr.lng)
+          .toList();
+    }
+
+    if (_mainAddresses.isNotEmpty) {
+      final firstMainAddress = _mainAddresses.first;
+      formDataMap['AddressText'] = firstMainAddress.text;
+      formDataMap['AddressLabel'] = firstMainAddress.label;
+      formDataMap['AddressLatitude'] = firstMainAddress.lat;
+      formDataMap['AddressLongitude'] = firstMainAddress.lng;
+    }
+
+    if (_pickupAddresses.isNotEmpty) {
+      final firstPickupAddress = _pickupAddresses.first;
+      formDataMap['PickupAddressText'] = firstPickupAddress.text;
+      formDataMap['PickupAddressLatitude'] = firstPickupAddress.lat;
+      formDataMap['PickupAddressLongitude'] = firstPickupAddress.lng;
+    }
+
+    final formData = FormData.fromMap(formDataMap);
     final response = await dio.post(_apiEndpoint, data: formData);
 
     if (response.statusCode == 200) {
@@ -366,7 +499,7 @@ class _UserSignupAddAddressPageState extends State<UserSignupAddAddressPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SectionLabel(_mainAddressLabel),
+        _SectionLabel('$_mainAddressLabel (${_mainAddresses.length} ที่อยู่)'),
         const SizedBox(height: 16),
 
         PrimaryTextField(
@@ -379,10 +512,35 @@ class _UserSignupAddAddressPageState extends State<UserSignupAddAddressPage> {
         const SizedBox(height: 16),
 
         AddressPickerTile(
-          value: _mainAddress,
-          placeholder: _mainAddressPlaceholder,
+          value: null,
+          placeholder: 'เพิ่ม$_mainAddressPlaceholder',
           onTap: () => _pickMainAddress(),
         ),
+
+        if (_mainAddresses.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Text(
+            'ที่อยู่หลักที่เลือก:',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ..._mainAddresses.asMap().entries.map(
+            (entry) => _buildAddressCard(
+              entry.value,
+              () => _removeMainAddress(entry.key),
+              Icons.home,
+            ),
+          ),
+        ] else ...[
+          const SizedBox(height: 16),
+          _buildEmptyStateMessage(
+            'ยังไม่มีที่อยู่หลัก กรุณาเพิ่มอย่างน้อย 1 ที่อยู่',
+          ),
+        ],
       ],
     );
   }
@@ -391,25 +549,144 @@ class _UserSignupAddAddressPageState extends State<UserSignupAddAddressPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SectionLabel(_pickupAddressLabel),
+        _SectionLabel(
+          '$_pickupAddressLabel (${_pickupAddresses.length} ที่อยู่)',
+        ),
         const SizedBox(height: 16),
 
         AddressPickerTile(
-          value: _pickupAddress,
-          placeholder: _pickupAddressPlaceholder,
+          value: null,
+          placeholder: 'เพิ่ม$_pickupAddressPlaceholder',
           onTap: () => _pickPickupAddress(),
         ),
+
+        if (_pickupAddresses.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Text(
+            'ที่อยู่รับสินค้าที่เลือก:',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ..._pickupAddresses.asMap().entries.map(
+            (entry) => _buildAddressCard(
+              entry.value,
+              () => _removePickupAddress(entry.key),
+              Icons.local_shipping,
+            ),
+          ),
+        ] else ...[
+          const SizedBox(height: 16),
+          _buildEmptyStateMessage(
+            'ยังไม่มีที่อยู่รับสินค้า กรุณาเพิ่มอย่างน้อย 1 ที่อยู่',
+          ),
+        ],
       ],
     );
   }
 
   Widget _buildSubmitButton() {
+    final hasRequiredAddresses =
+        _mainAddresses.isNotEmpty && _pickupAddresses.isNotEmpty;
+    final buttonText = _isLoading
+        ? 'กำลังสร้างบัญชี...'
+        : hasRequiredAddresses
+        ? '$_createAccountButtonText (หลัก: ${_mainAddresses.length}, รับสินค้า: ${_pickupAddresses.length})'
+        : _createAccountButtonText;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
       child: PrimaryButton(
-        text: _isLoading ? 'กำลังสร้างบัญชี...' : _createAccountButtonText,
+        text: buttonText,
         onPressed: () => _handleRegistration(),
         disabled: _isLoading || _isSelectingAddress,
+      ),
+    );
+  }
+
+  Widget _buildAddressCard(
+    AddressInfo address,
+    VoidCallback onRemove,
+    IconData icon,
+  ) {
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            Icon(icon, size: 20, color: Theme.of(context).colorScheme.primary),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    address.label,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    address.text,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              icon: Icon(
+                Icons.delete_outline,
+                color: Theme.of(context).colorScheme.error,
+              ),
+              onPressed: onRemove,
+              tooltip: 'ลบที่อยู่',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyStateMessage(String message) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.info_outline,
+            size: 20,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                fontSize: 14,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
