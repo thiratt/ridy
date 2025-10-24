@@ -34,3 +34,24 @@ Future<T> navigateReplaceTo<T extends Object?>(
           ),
   );
 }
+
+Future<T?> navigateAndRemoveUntil<T extends Object?>(
+  BuildContext context,
+  Widget page,
+  String routeName, {
+  bool useDefaultTransition = false,
+}) async {
+  return await Navigator.pushAndRemoveUntil(
+    context,
+    !useDefaultTransition
+        ? CupertinoPageRoute(
+            builder: (_) => page,
+            settings: RouteSettings(name: routeName),
+          )
+        : MaterialPageRoute(
+            builder: (_) => page,
+            settings: RouteSettings(name: routeName),
+          ),
+    (Route<dynamic> route) => false,
+  );
+}
