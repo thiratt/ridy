@@ -16,6 +16,42 @@ namespace server.Controllers
     {
         private readonly RidyContext _context = context;
 
+        [HttpGet]
+        public async Task<IActionResult> GetAllUsers([FromQuery] Guid? excludeUserId = null)
+        {
+            var query = _context.Accounts
+                .Where(a => a.Role == "USER");
+
+            if (excludeUserId.HasValue)
+            {
+                query = query.Where(a => a.Id != excludeUserId.Value);
+            }
+
+            var users = await query
+                .Select(a => new Models.Response.UserSummary
+                {
+                    Id = a.Id,
+                    PhoneNumber = a.PhoneNumber,
+                    Firstname = a.Firstname,
+                    Lastname = a.Lastname,
+                    AvatarUrl = a.AvatarUrl,
+                    FullName = (a.Firstname ?? "") + " " + (a.Lastname ?? ""),
+                    CreatedAt = a.CreatedAt
+                })
+                .OrderBy(u => u.FullName)
+                .ToListAsync();
+
+
+            var successResponse = new Models.Response.SuccessResponse
+            {
+                Status = Models.Enum.ResponseStatus.Success,
+                Message = "Users retrieved successfully",
+                Data = users
+            };
+
+            return Ok(successResponse);
+        }
+
         [HttpGet("{id:guid}")]
         public async Task<IActionResult> GetAccountById(Guid id)
         {
