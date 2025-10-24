@@ -1,18 +1,17 @@
-import 'dart:convert';
+import 'dart:developer';
 
-import 'package:app/models/request/login_request.dart';
-import 'package:app/models/request/login_with_role_request.dart';
-import 'package:app/models/response/login_response.dart';
 import 'package:app/models/response/role_selection_response.dart';
 import 'package:app/pages/auth/signup/page.dart';
 import 'package:app/pages/home/rider/page.dart';
+import 'package:app/services/authentication.dart';
+import 'package:app/shared/provider.dart';
 import 'package:app/utils/navigation.dart';
 import 'package:app/widgets/home_wrapper.dart';
 import 'package:app/widgets/text_field.dart';
 import 'package:app/widgets/button.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -25,11 +24,11 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _authService = AuthenticationService();
 
   bool _isLoading = false;
   String? _errorMessage;
 
-  static const String _apiEndpoint = 'http://10.0.2.2:5200/account/login';
   static const String _logoPath = 'assets/images/logo_black.png';
 
   @override
@@ -101,61 +100,40 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _performLogin() async {
-    final loginRequest = LoginRequest(
-      phoneNumber: _phoneController.text.trim(),
-      password: _passwordController.text,
+    final result = await _authService.login(
+      _phoneController.text.trim(),
+      _passwordController.text,
     );
 
-    final response = await http
-        .post(
-          Uri.parse(_apiEndpoint),
-          headers: {
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-          },
-          body: loginRequestToJson(loginRequest),
-        )
-        .timeout(
-          const Duration(seconds: 30),
-          onTimeout: () {
-            throw 'การเชื่อมต่อหมดเวลา กรุณาลองใหม่อีกครั้ง';
-          },
-        );
-
-    await _handleLoginResponse(response);
+    await _handleAuthResult(result);
   }
 
-  Future<void> _handleLoginResponse(http.Response response) async {
-    if (response.statusCode == 200) {
-      try {
-        final responseData = json.decode(response.body);
+  Future<void> _handleAuthResult(AuthLoginResponse result) async {
+    final provider = Provider.of<RidyProvider>(context, listen: false);
 
-        // Check if role selection is required
-        if (responseData['data'] != null &&
-            responseData['data']['requireRoleSelection'] == true) {
-          final roleSelectionResponse = roleSelectionResponseFromJson(
-            response.body,
-          );
-          await _showRoleSelectionDialog(
-            roleSelectionResponse.data.availableRoles,
-          );
-          return;
+    switch (result.result) {
+      case LoginResult.success:
+        if (result.userData != null) {
+          _authService.saveUserToProvider(provider, result.userData!);
+          await _navigateToHome(result.userData!.role, result.userData!.id);
         }
+        break;
 
-        // Normal login response
-        final loginResponse = loginResponseFromJson(response.body);
-        final userData = loginResponse.data;
+      case LoginResult.roleSelectionRequired:
+        if (result.availableRoles != null) {
+          await _showRoleSelectionDialog(result.availableRoles!);
+        }
+        break;
 
-        await _navigateToHome(userData.role, userData.id);
-      } catch (e) {
-        throw 'เกิดข้อผิดพลาดในการประมวลผลข้อมูล';
-      }
-    } else if (response.statusCode == 401) {
-      throw 'เบอร์โทรศัพท์หรือรหัสผ่านไม่ถูกต้อง';
-    } else if (response.statusCode >= 500) {
-      throw 'เซิร์ฟเวอร์ขัดข้อง กรุณาลองใหม่ภายหลัง';
-    } else {
-      throw 'เกิดข้อผิดพลาด: ${response.reasonPhrase ?? 'ไม่ทราบสาเหตุ'}';
+      case LoginResult.invalidCredentials:
+        throw result.message ?? 'เบอร์โทรศัพท์หรือรหัสผ่านไม่ถูกต้อง';
+
+      case LoginResult.serverError:
+        throw result.message ?? 'เซิร์ฟเวอร์ขัดข้อง กรุณาลองใหม่ภายหลัง';
+
+      case LoginResult.networkError:
+        throw result.message ??
+            'เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่อีกครั้ง';
     }
   }
 
@@ -268,42 +246,15 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
-      final request = LoginWithRoleRequest(
-        phoneNumber: _phoneController.text,
-        password: _passwordController.text,
-        role: role,
+      final result = await _authService.loginWithRole(
+        _phoneController.text,
+        _passwordController.text,
+        role,
       );
 
-      final response = await http.post(
-        Uri.parse('http://10.0.2.2:5200/account/login/select-role'),
-        headers: {'Content-Type': 'application/json'},
-        body: loginWithRoleRequestToJson(request),
-      );
-
-      if (response.statusCode == 200) {
-        final loginResponse = loginResponseFromJson(response.body);
-        final userData = loginResponse.data;
-
-        await _navigateToHome(userData.role, userData.id);
-      } else if (response.statusCode == 401) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('เบอร์โทรศัพท์หรือรหัสผ่านไม่ถูกต้อง'),
-            ),
-          );
-        }
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('เข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่อีกครั้ง'),
-            ),
-          );
-        }
-      }
+      await _handleAuthResult(result);
     } catch (e) {
-      print('Error during role-based login: $e');
+      log('Error during role-based login: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง')),
