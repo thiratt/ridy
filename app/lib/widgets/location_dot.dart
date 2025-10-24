@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class CurrentLocationDot extends StatefulWidget {
   const CurrentLocationDot({
     super.key,
-    this.size = 28,
+    this.size = 20,
     this.color = const Color(0xFF2F80ED),
   });
 
@@ -59,14 +59,20 @@ class _CurrentLocationDotState extends State<CurrentLocationDot>
               );
             },
           ),
+
           Container(
-            width: widget.size * 0.8,
-            height: widget.size * 0.8,
-            decoration: const BoxDecoration(
+            width: widget.size * 1.4,
+            height: widget.size * 1.4,
+            decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: Colors.white,
+              border: Border.all(
+                color: widget.color.withValues(alpha: 0.3),
+                width: 1.5,
+              ),
             ),
           ),
+
           Container(
             width: widget.size * 0.7,
             height: widget.size * 0.7,
