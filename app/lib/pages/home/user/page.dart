@@ -1,17 +1,16 @@
-import 'dart:convert';
-
 import 'package:app/models/delivery.dart';
 import 'package:app/pages/home/user/shipment/page.dart';
 import 'package:app/services/location_service.dart';
+import 'package:app/services/delivery_service.dart' as delivery;
+import 'package:app/shared/provider.dart';
 import 'package:app/themes/app_theme.dart';
 import 'package:app/utils/navigation.dart';
 import 'package:app/widgets/text_field.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 
 class UserHomePage extends StatefulWidget {
-  final String uid;
-  const UserHomePage({super.key, required this.uid});
+  const UserHomePage({super.key});
 
   @override
   State<UserHomePage> createState() => _UserHomePageState();
@@ -19,7 +18,7 @@ class UserHomePage extends StatefulWidget {
 
 class _UserHomePageState extends State<UserHomePage> {
   final List<Delivery> _deliveries = [];
-  late Future<String> imageUrl;
+  String _imageUrl = '';
 
   // Location state
   String _currentLocation = 'กำลังโหลดตำแหน่ง...';
@@ -155,12 +154,22 @@ class _UserHomePageState extends State<UserHomePage> {
   }
 
   Future<void> _loadDeliveries() async {
+    final provider = Provider.of<RidyProvider>(context, listen: false);
+    final userId = provider.userId;
+
+    if (userId == null) {
+      _showErrorMessage('ไม่พบข้อมูลผู้ใช้');
+      return;
+    }
+
     setState(() {
       _isLoadingDeliveries = true;
     });
 
     try {
-      final deliveries = await DeliveryService.getUserDeliveries(widget.uid);
+      final deliveries = await delivery.DeliveryService.getUserDeliveries(
+        userId,
+      );
       if (mounted) {
         setState(() {
           _deliveries.clear();
@@ -174,7 +183,7 @@ class _UserHomePageState extends State<UserHomePage> {
         setState(() {
           _isLoadingDeliveries = false;
         });
-        _showErrorMessage('ไม่สามารถโหลดรายการส่งสินค้าได้');
+        _showErrorMessage('ไม่สามารถโหลดรายการส่งสินค้าได้: ${e.toString()}');
       }
     }
   }
@@ -196,25 +205,27 @@ class _UserHomePageState extends State<UserHomePage> {
   }
 
   Future<String> _getImageUrl() async {
-    String endpoint = 'http://10.0.2.2:5200/account/${widget.uid}';
+    final provider = Provider.of<RidyProvider>(context, listen: false);
 
-    final response = await http.get(Uri.parse(endpoint));
-    if (response.statusCode == 200) {
-      final responseData = jsonDecode(response.body);
-      return responseData['data']['avatarUrl'].toString().replaceAll(
-        "localhost",
-        "10.0.2.2",
-      );
-    }
-    return '';
+    // Use the enhanced provider method to get formatted avatar URL
+    return provider.getFormattedAvatarUrl();
   }
 
   @override
   void initState() {
     super.initState();
-    imageUrl = _getImageUrl();
+    _loadUserData();
     _loadCurrentLocation();
     _loadDeliveries();
+  }
+
+  void _loadUserData() async {
+    final imageUrl = await _getImageUrl();
+    if (mounted) {
+      setState(() {
+        _imageUrl = imageUrl;
+      });
+    }
   }
 
   @override
@@ -228,112 +239,98 @@ class _UserHomePageState extends State<UserHomePage> {
     // final bottom = MediaQuery.of(context).viewPadding.bottom;
 
     return Scaffold(
-      body: FutureBuilder(
-        future: imageUrl,
-        builder: (context, asyncSnapshot) {
-          if (asyncSnapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (asyncSnapshot.hasError) {
-            return Center(child: Text('Error: ${asyncSnapshot.error}'));
-          } else if (!asyncSnapshot.hasData) {
-            return const Center(child: Text('No data found'));
-          }
-          final imageUrl = asyncSnapshot.data;
-
-          return Column(
-            children: [
-              _Header(
-                onSearch: _openSearch,
-                imageUrl: imageUrl,
-                currentLocation: _currentLocation,
-                isLoadingLocation: _isLoadingLocation,
-                searchController: _searchController,
-              ),
-              Expanded(
-                child: RefreshIndicator(
-                  onRefresh: _refreshData,
-                  child: ListView(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 120),
+      body: Column(
+        children: [
+          _Header(
+            onSearch: _openSearch,
+            imageUrl: _imageUrl,
+            currentLocation: _currentLocation,
+            isLoadingLocation: _isLoadingLocation,
+            searchController: _searchController,
+          ),
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: _refreshData,
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 120),
+                children: [
+                  Row(
                     children: [
-                      Row(
-                        children: [
-                          Text(
-                            'รายการส่งสินค้า (${_filteredDeliveries.length})',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                            ),
+                      Text(
+                        'รายการส่งสินค้า (${_filteredDeliveries.length})',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const Spacer(),
+                      OutlinedButton.icon(
+                        onPressed: _openFilter,
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
                           ),
-                          const Spacer(),
-                          OutlinedButton.icon(
-                            onPressed: _openFilter,
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
-                              visualDensity: VisualDensity.compact,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20),
-                              ),
+                          visualDensity: VisualDensity.compact,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                        ),
+                        icon: const Icon(Icons.tune, size: 16),
+                        label: Text(
+                          _selectedFilter,
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+
+                  if (_isLoadingDeliveries)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 48),
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  else if (_filteredDeliveries.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 48),
+                      child: Center(
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.local_shipping_outlined,
+                              size: 64,
+                              color: Colors.black.withValues(alpha: 0.3),
                             ),
-                            icon: const Icon(Icons.tune, size: 16),
-                            label: Text(
-                              _selectedFilter,
-                              style: const TextStyle(
+                            const SizedBox(height: 16),
+                            Text(
+                              _deliveries.isEmpty
+                                  ? 'ไม่มีรายการส่งสินค้า'
+                                  : 'ไม่พบรายการส่งสินค้าที่ตรงกับการค้นหา',
+                              style: TextStyle(
+                                color: Colors.black.withValues(alpha: 0.6),
+                                fontSize: 14,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-
-                      if (_isLoadingDeliveries)
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 48),
-                          child: Center(child: CircularProgressIndicator()),
-                        )
-                      else if (_filteredDeliveries.isEmpty)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 48),
-                          child: Center(
-                            child: Column(
-                              children: [
-                                Icon(
-                                  Icons.local_shipping_outlined,
-                                  size: 64,
-                                  color: Colors.black.withValues(alpha: 0.3),
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  _deliveries.isEmpty
-                                      ? 'ไม่มีรายการส่งสินค้า'
-                                      : 'ไม่พบรายการส่งสินค้าที่ตรงกับการค้นหา',
-                                  style: TextStyle(
-                                    color: Colors.black.withValues(alpha: 0.6),
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        )
-                      else
-                        ..._filteredDeliveries.map(
-                          (delivery) => _DeliveryTile(
-                            delivery: delivery,
-                            currentUserId: widget.uid,
-                          ),
+                          ],
                         ),
-                    ],
-                  ),
-                ),
+                      ),
+                    )
+                  else
+                    ..._filteredDeliveries.map(
+                      (delivery) => Consumer<RidyProvider>(
+                        builder: (context, provider, child) => _DeliveryTile(
+                          delivery: delivery,
+                          currentUserId: provider.userId ?? '',
+                        ),
+                      ),
+                    ),
+                ],
               ),
-            ],
-          );
-        },
+            ),
+          ),
+        ],
       ),
 
       floatingActionButton: Column(
@@ -370,7 +367,7 @@ class _UserHomePageState extends State<UserHomePage> {
 
 class _Header extends StatelessWidget {
   final ValueChanged<String> onSearch;
-  final String? imageUrl;
+  final String imageUrl;
   final String currentLocation;
   final bool isLoadingLocation;
   final TextEditingController searchController;
@@ -399,18 +396,11 @@ class _Header extends StatelessWidget {
         children: [
           Row(
             children: [
-              if (imageUrl == null || imageUrl!.isEmpty)
-                CircleAvatar(
-                  radius: 20,
-                  backgroundColor: Colors.grey.shade300,
-                  child: const Icon(Icons.person, size: 20),
-                )
-              else
-                CircleAvatar(
-                  radius: 20,
-                  backgroundColor: Colors.grey.shade300,
-                  backgroundImage: NetworkImage(imageUrl!),
-                ),
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: Colors.grey.shade300,
+                backgroundImage: NetworkImage(imageUrl),
+              ),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
