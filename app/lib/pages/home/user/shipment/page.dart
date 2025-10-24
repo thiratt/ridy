@@ -2,7 +2,9 @@ import 'dart:convert';
 import 'dart:developer';
 import 'package:app/config/api_constants.dart';
 import 'package:app/models/user_summary.dart';
+import 'package:app/pages/home/user/shipment/upload_image.dart';
 import 'package:app/shared/provider.dart';
+import 'package:app/utils/navigation.dart';
 import 'package:app/widgets/map.dart';
 import 'package:app/widgets/text_field.dart';
 import 'package:flutter/material.dart';
@@ -536,47 +538,48 @@ class _ShipmentPageState extends State<ShipmentPage> {
 
   void _selectDeliveryAddress(Address address) {
     // Handle delivery address selection
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('ยืนยันที่อยู่จัดส่ง'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('ผู้รับสินค้า: ${_selectedUser?.fullName}'),
-            const SizedBox(height: 8),
-            if (address.label?.isNotEmpty == true) ...[
-              Text('ป้ายกำกับ: ${address.label}'),
-              const SizedBox(height: 8),
-            ],
-            Text('ที่อยู่: ${address.addressText}'),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('ยกเลิก'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('เลือกที่อยู่จัดส่งเรียบร้อยแล้ว'),
-                  action: SnackBarAction(
-                    label: 'ต่อไป',
-                    onPressed: () {
-                      // Navigate to next step (create shipment form)
-                    },
-                  ),
-                ),
-              );
-            },
-            child: const Text('ยืนยัน'),
-          ),
-        ],
-      ),
-    );
+    navigateTo(context, UploadImagePage(), "/shipment/upload_image");
+    // showDialog(
+    //   context: context,
+    //   builder: (context) => AlertDialog(
+    //     title: const Text('ยืนยันที่อยู่จัดส่ง'),
+    //     content: Column(
+    //       mainAxisSize: MainAxisSize.min,
+    //       crossAxisAlignment: CrossAxisAlignment.start,
+    //       children: [
+    //         Text('ผู้รับสินค้า: ${_selectedUser?.fullName}'),
+    //         const SizedBox(height: 8),
+    //         if (address.label?.isNotEmpty == true) ...[
+    //           Text('ป้ายกำกับ: ${address.label}'),
+    //           const SizedBox(height: 8),
+    //         ],
+    //         Text('ที่อยู่: ${address.addressText}'),
+    //       ],
+    //     ),
+    //     actions: [
+    //       TextButton(
+    //         onPressed: () => Navigator.pop(context),
+    //         child: const Text('ยกเลิก'),
+    //       ),
+    //       ElevatedButton(
+    //         onPressed: () {
+    //           Navigator.pop(context);
+    //           ScaffoldMessenger.of(context).showSnackBar(
+    //             SnackBar(
+    //               content: Text('เลือกที่อยู่จัดส่งเรียบร้อยแล้ว'),
+    //               action: SnackBarAction(
+    //                 label: 'ต่อไป',
+    //                 onPressed: () {
+    //                   // Navigate to next step (create shipment form)
+    //                 },
+    //               ),
+    //             ),
+    //           );
+    //         },
+    //         child: const Text('ยืนยัน'),
+    //       ),
+    //     ],
+    //   ),
+    // );
   }
 }
