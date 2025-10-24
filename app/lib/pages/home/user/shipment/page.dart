@@ -8,6 +8,7 @@ import 'package:app/widgets/text_field.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
+import 'user_detail_sheet.dart';
 
 class _LocationTexts {
   static const String appBarTitle = 'สร้างการจัดส่งใหม่';
@@ -34,6 +35,10 @@ class _ShipmentPageState extends State<ShipmentPage> {
   final TextEditingController _searchController = TextEditingController();
   final RidyMapController _mapController = RidyMapController();
 
+  // Navigation state for user detail view
+  bool _showUserDetail = false;
+  UserInformation? _selectedUser;
+
   @override
   void initState() {
     super.initState();
@@ -47,6 +52,9 @@ class _ShipmentPageState extends State<ShipmentPage> {
       if (_searchFocusNode.hasFocus) {
         setState(() {
           _isSearchFocused = true;
+          // Reset to user selection when search is focused
+          _showUserDetail = false;
+          _selectedUser = null;
         });
         _draggableScrollableController.animateTo(
           0.8,
@@ -187,84 +195,101 @@ class _ShipmentPageState extends State<ShipmentPage> {
             ),
           ),
           DraggableScrollableSheet(
-            initialChildSize: _isSearchFocused ? 0.8 : 0.2,
-            minChildSize: _isSearchFocused ? 0.8 : 0.2,
+            initialChildSize: (_isSearchFocused || _showUserDetail) ? 0.8 : 0.2,
+            minChildSize: (_isSearchFocused || _showUserDetail) ? 0.8 : 0.2,
             maxChildSize: 0.8,
             snap: true,
-            snapSizes: _isSearchFocused ? const [0.8] : const [0.2, 0.4, 0.8],
+            snapSizes: (_isSearchFocused || _showUserDetail)
+                ? const [0.8]
+                : const [0.2, 0.4, 0.8],
             controller: _draggableScrollableController,
             builder: (context, scrollController) {
               return GestureDetector(
                 onTap: () => FocusScope.of(context).unfocus(),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface,
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(24),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 10,
-                        offset: const Offset(0, -2),
-                      ),
-                    ],
-                  ),
-                  child: CustomScrollView(
-                    controller: scrollController,
-                    slivers: [
-                      // Drag handle
-                      SliverToBoxAdapter(
-                        child: Container(
-                          height: 32,
-                          alignment: Alignment.center,
-                          child: Container(
-                            width: 40,
-                            height: 4,
-                            decoration: BoxDecoration(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurface.withValues(alpha: 0.3),
-                              borderRadius: BorderRadius.circular(2),
+                child: _showUserDetail && _selectedUser != null
+                    ? UserDetailSheet(
+                        user: _selectedUser!,
+                        onBack: _backToUserSelection,
+                        onSelectDeliveryAddress: _selectDeliveryAddress,
+                      )
+                    : Container(
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surface,
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(24),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: 10,
+                              offset: const Offset(0, -2),
                             ),
-                          ),
+                          ],
+                        ),
+                        child: CustomScrollView(
+                          controller: scrollController,
+                          slivers: [
+                            // Drag handle
+                            SliverToBoxAdapter(
+                              child: Container(
+                                height: 32,
+                                alignment: Alignment.center,
+                                child: Container(
+                                  width: 40,
+                                  height: 4,
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withValues(alpha: 0.3),
+                                    borderRadius: BorderRadius.circular(2),
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            // Header content
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'เลือกผู้รับสินค้า',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleLarge
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    PrimaryTextField(
+                                      controller: _searchController,
+                                      labelText:
+                                          "ค้นหาผู้รับสินค้าด้วยหมายเลขโทรศัพท์",
+                                      prefixIcon: const Icon(Icons.search),
+                                      focusNode: _searchFocusNode,
+                                    ),
+                                    const SizedBox(height: 16),
+                                  ],
+                                ),
+                              ),
+                            ),
+
+                            // Content list
+                            SliverPadding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
+                              sliver: _buildUserList(),
+                            ),
+                          ],
                         ),
                       ),
-
-                      // Header content
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'เลือกผู้รับสินค้า',
-                                style: Theme.of(context).textTheme.titleLarge
-                                    ?.copyWith(fontWeight: FontWeight.w600),
-                              ),
-                              const SizedBox(height: 12),
-                              PrimaryTextField(
-                                controller: _searchController,
-                                labelText:
-                                    "ค้นหาผู้รับสินค้าด้วยหมายเลขโทรศัพท์",
-                                prefixIcon: const Icon(Icons.search),
-                                focusNode: _searchFocusNode,
-                              ),
-                              const SizedBox(height: 16),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      // Content list
-                      SliverPadding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        sliver: _buildUserList(),
-                      ),
-                    ],
-                  ),
-                ),
               );
             },
           ),
@@ -489,17 +514,43 @@ class _ShipmentPageState extends State<ShipmentPage> {
   void _selectUser(UserInformation user) {
     FocusScope.of(context).unfocus();
 
+    setState(() {
+      _selectedUser = user;
+      _showUserDetail = true;
+    });
+
+    // Animate to expanded state
+    _draggableScrollableController.animateTo(
+      0.8,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  void _backToUserSelection() {
+    setState(() {
+      _showUserDetail = false;
+      _selectedUser = null;
+    });
+  }
+
+  void _selectDeliveryAddress(Address address) {
+    // Handle delivery address selection
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('ยืนยันการเลือกผู้รับสินค้า'),
+        title: const Text('ยืนยันที่อยู่จัดส่ง'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('ชื่อ: ${user.fullName}'),
+            Text('ผู้รับสินค้า: ${_selectedUser?.fullName}'),
             const SizedBox(height: 8),
-            Text('เบอร์โทร: ${user.phoneNumber}'),
+            if (address.label?.isNotEmpty == true) ...[
+              Text('ป้ายกำกับ: ${address.label}'),
+              const SizedBox(height: 8),
+            ],
+            Text('ที่อยู่: ${address.addressText}'),
           ],
         ),
         actions: [
@@ -512,7 +563,13 @@ class _ShipmentPageState extends State<ShipmentPage> {
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('เลือก ${user.fullName} เป็นผู้รับสินค้า'),
+                  content: Text('เลือกที่อยู่จัดส่งเรียบร้อยแล้ว'),
+                  action: SnackBarAction(
+                    label: 'ต่อไป',
+                    onPressed: () {
+                      // Navigate to next step (create shipment form)
+                    },
+                  ),
                 ),
               );
             },
