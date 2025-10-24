@@ -302,7 +302,7 @@ namespace server.Controllers
             }
         }
 
-        [HttpPost("register")]
+        [HttpPost("signup")]
         public async Task<IActionResult> CreateAccount([FromForm] CreateAccountRequest request)
         {
             try
