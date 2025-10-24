@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'package:app/models/user_summary.dart';
+import 'package:app/pages/home/user/shipment/summary.dart';
 import 'package:app/widgets/button.dart';
 import 'package:app/widgets/image_source_sheet.dart';
 import 'package:flutter/material.dart';
@@ -43,7 +45,14 @@ class _ShipmentImageTexts {
 }
 
 class UploadImagePage extends StatefulWidget {
-  const UploadImagePage({super.key});
+  final UserInformation recipient;
+  final Address deliveryAddress;
+
+  const UploadImagePage({
+    super.key,
+    required this.recipient,
+    required this.deliveryAddress,
+  });
 
   @override
   State<UploadImagePage> createState() => _UploadImagePageState();
@@ -95,7 +104,16 @@ class _UploadImagePageState extends State<UploadImagePage> {
       return;
     }
 
-    Navigator.pop(context, File(_selectedImage!.path));
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DeliveryDetailsPage(
+          recipient: widget.recipient,
+          deliveryAddress: widget.deliveryAddress,
+          packageImage: File(_selectedImage!.path),
+        ),
+      ),
+    );
   }
 
   Widget _buildTitle() {
