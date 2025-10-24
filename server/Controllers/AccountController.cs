@@ -85,6 +85,35 @@ namespace server.Controllers
             return Ok(successResponse);
         }
 
+        [HttpPost("check-phone")]
+        public async Task<IActionResult> CheckPhoneNumber([FromBody] CheckPhoneNumberRequest request)
+        {
+            var existingAccount = await _context.Accounts
+                .FirstOrDefaultAsync(a => a.PhoneNumber == request.PhoneNumber && a.Role == request.Role);
+
+            if (existingAccount != null)
+            {
+                var roleName = request.Role.ToUpper() == "USER" ? "ผู้ใช้งาน" : "ผู้ขับขี่";
+                var errorResponse = new Models.Response.ErrorResponse
+                {
+                    Status = Models.Enum.ResponseStatus.Fail,
+                    Message = $"หมายเลขโทรศัพท์นี้ถูกใช้แล้วสำหรับ{roleName}",
+                    Details = new { request.PhoneNumber, Role = request.Role }
+                };
+
+                return Conflict(errorResponse);
+            }
+
+            var successResponse = new Models.Response.SuccessResponse
+            {
+                Status = Models.Enum.ResponseStatus.Success,
+                Message = "หมายเลขโทรศัพท์นี้สามารถใช้ได้",
+                Data = new { request.PhoneNumber, Role = request.Role }
+            };
+
+            return Ok(successResponse);
+        }
+
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
