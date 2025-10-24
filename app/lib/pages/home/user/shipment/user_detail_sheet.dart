@@ -1,5 +1,5 @@
+import 'package:app/models/user_information.dart';
 import 'package:flutter/material.dart';
-import 'package:app/models/user_summary.dart';
 
 class UserDetailSheet extends StatelessWidget {
   final UserInformation user;
@@ -66,7 +66,7 @@ class UserDetailSheet extends StatelessWidget {
         tooltip: 'กลับไปเลือกผู้รับสินค้า',
       ),
       title: Text(
-        user.fullName,
+        user.fullname,
         style: Theme.of(
           context,
         ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
@@ -121,7 +121,7 @@ class UserDetailSheet extends StatelessWidget {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(32),
                 child: Image.network(
-                  user.avatarUrl.replaceAll("localhost", "10.0.2.2"),
+                  user.avatarUrl.replaceAll("localhost", "100.69.213.128"),
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) => Icon(
                     Icons.person,
@@ -140,7 +140,7 @@ class UserDetailSheet extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    user.fullName,
+                    user.fullname,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),

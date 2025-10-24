@@ -27,14 +27,14 @@ class _RiderHomePageState extends State<RiderHomePage> {
   }
 
   Future<List<String>> _getImageUrl() async {
-    String endpoint = 'http://10.0.2.2:5200/account/${widget.uid}';
+    String endpoint = 'http://100.69.213.128:5200/account/${widget.uid}';
 
     final response = await http.get(Uri.parse(endpoint));
     if (response.statusCode == 200) {
       final responseData = jsonDecode(response.body);
       String imageUrl = responseData['data']['avatarUrl'].toString().replaceAll(
         "localhost",
-        "10.0.2.2",
+        "100.69.213.128",
       );
       String vehiclePlate =
           responseData['data']['riderProfile']['vehiclePlate'];
@@ -78,9 +78,7 @@ class _RiderHomePageState extends State<RiderHomePage> {
                   8,
                   14,
                 ),
-                decoration: const BoxDecoration(
-                  color: Color(0xFFFFF1D7),
-                ),
+                decoration: const BoxDecoration(color: Color(0xFFFFF1D7)),
                 child: Row(
                   children: [
                     if (imageUrl.isEmpty)

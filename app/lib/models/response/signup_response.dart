@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:app/models/user_information.dart';
+
 SignupResponse signupResponseFromJson(String str) =>
     SignupResponse.fromJson(json.decode(str));
 
@@ -8,7 +10,7 @@ String signupResponseToJson(SignupResponse data) => json.encode(data.toJson());
 class SignupResponse {
   String status;
   String message;
-  SignupData data;
+  UserInformation data;
 
   SignupResponse({
     required this.status,
@@ -19,7 +21,7 @@ class SignupResponse {
   factory SignupResponse.fromJson(Map<String, dynamic> json) => SignupResponse(
     status: json["status"],
     message: json["message"],
-    data: SignupData.fromJson(json["data"]),
+    data: UserInformation.fromJson(json["data"]),
   );
 
   Map<String, dynamic> toJson() => {

@@ -1,5 +1,7 @@
 import 'package:app/models/request/signup_request.dart';
+import 'package:app/models/user_information.dart';
 import 'package:app/models/user_signup_draft.dart';
+import 'package:app/models/response/all_users.dart';
 import 'package:app/pages/auth/signup/user/select_address.dart';
 import 'package:app/services/authentication.dart';
 import 'package:app/shared/provider.dart';
@@ -384,9 +386,9 @@ class _UserSignupAddAddressPageState extends State<UserSignupAddAddressPage> {
 
     switch (response.result) {
       case SignupResult.success:
-        if (response.userData != null) {
-          authService.saveUserToProvider(provider, response.userData!);
-          await _handleSuccessfulRegistration(response.userData!);
+        if (response.user != null) {
+          authService.saveUserToProvider(provider, response.user!);
+          await _handleSuccessfulRegistration(response.user!);
         } else {
           throw 'เกิดข้อผิดพลาดในการประมวลผลข้อมูล';
         }
@@ -402,7 +404,7 @@ class _UserSignupAddAddressPageState extends State<UserSignupAddAddressPage> {
     }
   }
 
-  Future<void> _handleSuccessfulRegistration(UserData userData) async {
+  Future<void> _handleSuccessfulRegistration(UserInformation userData) async {
     if (!mounted) return;
 
     _showSuccessMessage('สมัครสมาชิกสำเร็จ');

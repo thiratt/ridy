@@ -113,9 +113,9 @@ class _LoginPageState extends State<LoginPage> {
 
     switch (result.result) {
       case LoginResult.success:
-        if (result.userData != null) {
-          _authService.saveUserToProvider(provider, result.userData!);
-          await _navigateToHome(result.userData!.role, result.userData!.id);
+        if (result.user != null) {
+          _authService.saveUserToProvider(provider, result.user!);
+          await _navigateToHome(result.user!.role, result.user!.id);
         }
         break;
 

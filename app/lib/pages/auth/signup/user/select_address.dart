@@ -221,14 +221,12 @@ class _SelectLocationPageState extends State<SelectLocationPage> {
         coordinates.longitude,
       );
 
-      log('Reverse geocoding result: $placemarks');
-
       if (placemarks.isNotEmpty) {
         final placemark = placemarks.first;
         final addressParts = [
           placemark.name,
-          placemark.subLocality,
           placemark.locality,
+          placemark.subAdministrativeArea,
           placemark.administrativeArea,
           placemark.postalCode,
         ].where((part) => part != null && part.trim().isNotEmpty);

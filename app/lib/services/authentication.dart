@@ -7,6 +7,7 @@ import 'package:app/models/request/signup_request.dart';
 import 'package:app/models/response/login_response.dart';
 import 'package:app/models/response/role_selection_response.dart';
 import 'package:app/models/response/signup_response.dart';
+import 'package:app/models/user_information.dart';
 import 'package:app/shared/provider.dart';
 import 'package:app/utils/request_helper.dart';
 import 'package:dio/dio.dart';
@@ -31,13 +32,13 @@ enum SignupResult {
 class AuthLoginResponse {
   final LoginResult result;
   final String? message;
-  final UserData? userData;
+  final UserInformation? user;
   final List<AvailableRole>? availableRoles;
 
   AuthLoginResponse({
     required this.result,
     this.message,
-    this.userData,
+    this.user,
     this.availableRoles,
   });
 }
@@ -45,9 +46,9 @@ class AuthLoginResponse {
 class AuthSignupResponse {
   final SignupResult result;
   final String? message;
-  final UserData? userData;
+  final UserInformation? user;
 
-  AuthSignupResponse({required this.result, this.message, this.userData});
+  AuthSignupResponse({required this.result, this.message, this.user});
 }
 
 class AuthenticationService {
@@ -133,16 +134,7 @@ class AuthenticationService {
         final loginResponse = loginResponseFromJson(response.body);
         final userData = loginResponse.data;
 
-        final user = UserData(
-          id: userData.id,
-          role: userData.role,
-          phoneNumber: userData.phoneNumber,
-          firstname: userData.firstname,
-          lastname: userData.lastname,
-          avatarUrl: userData.avatarUrl,
-        );
-
-        return AuthLoginResponse(result: LoginResult.success, userData: user);
+        return AuthLoginResponse(result: LoginResult.success, user: userData);
       } catch (e) {
         return AuthLoginResponse(
           result: LoginResult.serverError,
@@ -260,16 +252,7 @@ class AuthenticationService {
         );
         final userData = signupResponse.data;
 
-        final user = UserData(
-          id: userData.id,
-          role: userData.role,
-          phoneNumber: userData.phoneNumber,
-          firstname: userData.firstname,
-          lastname: userData.lastname,
-          avatarUrl: userData.avatarUrl,
-        );
-
-        return AuthSignupResponse(result: SignupResult.success, userData: user);
+        return AuthSignupResponse(result: SignupResult.success, user: userData);
       } catch (e) {
         return AuthSignupResponse(
           result: SignupResult.serverError,
@@ -332,7 +315,7 @@ class AuthenticationService {
     }
   }
 
-  void saveUserToProvider(RidyProvider provider, UserData userData) {
+  void saveUserToProvider(RidyProvider provider, UserInformation userData) {
     provider.setUser(userData);
   }
 }

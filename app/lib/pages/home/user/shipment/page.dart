@@ -1,14 +1,17 @@
 import 'dart:convert';
 import 'dart:developer';
 import 'package:app/config/api_constants.dart';
-import 'package:app/models/user_summary.dart';
-import 'package:app/pages/home/user/shipment/upload_image.dart';
+import 'package:app/models/user_information.dart';
+import 'package:app/models/response/all_users.dart';
+import 'package:app/pages/home/user/shipment/select_pickup_address.dart';
 import 'package:app/shared/provider.dart';
 import 'package:app/utils/navigation.dart';
 import 'package:app/widgets/map.dart';
 import 'package:app/widgets/text_field.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:http/http.dart' as http;
+import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'user_detail_sheet.dart';
 
@@ -97,7 +100,7 @@ class _ShipmentPageState extends State<ShipmentPage> {
       );
 
       if (response.statusCode == 200) {
-        final getAllUsersResponse = GetAllUsersResponse.fromJson(
+        final getAllUsersResponse = AllUsers.fromJson(
           json.decode(response.body),
         );
 
@@ -134,7 +137,7 @@ class _ShipmentPageState extends State<ShipmentPage> {
         _filteredUsers = _allUsers;
       } else {
         _filteredUsers = _allUsers.where((user) {
-          final name = user.fullName.toLowerCase();
+          final name = user.fullname.toLowerCase();
           final phone = user.phoneNumber.toLowerCase();
           return name.contains(query) || phone.contains(query);
         }).toList();
@@ -177,6 +180,27 @@ class _ShipmentPageState extends State<ShipmentPage> {
                 }
               }
             },
+            additionalMarkers: [
+              if (_selectedUser != null)
+                ..._selectedUser!.addresses.asMap().entries.map((entry) {
+                  int index = entry.key;
+                  var address = entry.value;
+                  return Marker(
+                    point: LatLng(address.latitude, address.longitude),
+                    width: 80,
+                    height: 80,
+                    child: _buildUserMarker(_selectedUser!, index),
+                  );
+                }),
+
+              // for (var address in _selectedUser!.addresses)
+              //   Marker(
+              //     point: LatLng(address.latitude, address.longitude),
+              //     width: 30,
+              //     height: 30,
+              //     child: _buildUserMarker(_selectedUser!),
+              //   ),
+            ],
           ),
           Positioned(
             right: 16,
@@ -402,7 +426,7 @@ class _ShipmentPageState extends State<ShipmentPage> {
             child: Image.network(
               user.avatarUrl.replaceAll(
                 "localhost",
-                "10.0.2.2",
+                "100.69.213.128",
               ), // for development only. Need to change in production
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) => Icon(
@@ -413,7 +437,7 @@ class _ShipmentPageState extends State<ShipmentPage> {
           ),
         ),
         title: Text(
-          user.fullName,
+          user.fullname,
           style: Theme.of(
             context,
           ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
@@ -512,6 +536,111 @@ class _ShipmentPageState extends State<ShipmentPage> {
     );
   }
 
+  Widget _buildUserMarker(UserInformation user, int index) {
+    return SizedBox(
+      width: 80,
+      height: 100, // เพิ่มความสูงนิดนึงให้พอสำหรับ label ด้านบน
+      child: Stack(
+        alignment: Alignment.center,
+        clipBehavior: Clip.none,
+        children: [
+          // 🔹 Label ด้านบนหัว
+          Positioned(
+            top: -8, // ขยับขึ้นเหนือวงกลม
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.15),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Text(
+                user.addresses[index].label!,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Colors.black,
+                  fontWeight: FontWeight.w600,
+                ),
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ),
+
+          // 🔸 Outer white circle with shadow
+          Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.2),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+          ),
+
+          // 🔸 Inner circle (user image)
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: Theme.of(context).colorScheme.primary,
+                width: 3,
+              ),
+            ),
+            child: ClipOval(
+              child: Image.network(
+                user.avatarUrl.replaceAll("localhost", "100.69.213.128"),
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => Container(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.primary.withValues(alpha: 0.1),
+                  child: Icon(
+                    Icons.person,
+                    size: 30,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          // 🔸 Location dot ด้านล่าง
+          Positioned(
+            bottom: 5,
+            child: Container(
+              width: 16,
+              height: 16,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Theme.of(context).colorScheme.secondary,
+                border: Border.all(color: Colors.white, width: 2),
+              ),
+              child: const Icon(
+                Icons.location_on,
+                size: 10,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _selectUser(UserInformation user) {
     FocusScope.of(context).unfocus();
 
@@ -520,12 +649,29 @@ class _ShipmentPageState extends State<ShipmentPage> {
       _showUserDetail = true;
     });
 
+    // Animate map to user's location
+    if (user.addresses.isNotEmpty) {
+      final userLocation = LatLng(
+        user.addresses.first.latitude,
+        user.addresses.first.longitude,
+      );
+      _mapController.animateToLocation(
+        userLocation,
+        zoom: 16.0,
+        duration: const Duration(milliseconds: 800),
+      );
+    }
+
     // Animate to expanded state
     _draggableScrollableController.animateTo(
       0.8,
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
     );
+
+    for (var address in user.addresses) {
+      log('User Address: (${address.latitude}, ${address.longitude})');
+    }
   }
 
   void _backToUserSelection() {
@@ -538,20 +684,14 @@ class _ShipmentPageState extends State<ShipmentPage> {
   void _selectDeliveryAddress(Address address) {
     if (_selectedUser == null) return;
 
-    // Navigate to upload image page with selected user and address data
+    // Navigate to pickup address selection page
     navigateTo(
       context,
-      UploadImagePage(recipient: _selectedUser!, deliveryAddress: address),
-      "/shipment/upload_image",
+      SelectPickupAddressPage(
+        recipient: _selectedUser!,
+        deliveryAddress: address,
+      ),
+      "/shipment/select_pickup_address",
     );
-    // Navigator.push(
-    //   context,
-    //   MaterialPageRoute(
-    //     builder: (context) => UploadImagePage(
-    //       recipient: _selectedUser!,
-    //       deliveryAddress: address,
-    //     ),
-    //   ),
-    // );
   }
 }

@@ -23,7 +23,7 @@ class _VehicleImageConfig {
   static const double buttonHeight = 56.0;
   static const int imageQuality = 85;
 
-  static const String apiBaseUrl = 'http://10.0.2.2:5200';
+  static const String apiBaseUrl = 'http://100.69.213.128:5200';
 }
 
 /// Text constants for rider vehicle image page

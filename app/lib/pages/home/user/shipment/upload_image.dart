@@ -1,5 +1,6 @@
 import 'dart:io';
-import 'package:app/models/user_summary.dart';
+import 'package:app/models/response/all_users.dart';
+import 'package:app/models/user_information.dart';
 import 'package:app/pages/home/user/shipment/summary.dart';
 import 'package:app/widgets/button.dart';
 import 'package:app/widgets/image_source_sheet.dart';
@@ -47,11 +48,13 @@ class _ShipmentImageTexts {
 class UploadImagePage extends StatefulWidget {
   final UserInformation recipient;
   final Address deliveryAddress;
+  final Address pickupAddress;
 
   const UploadImagePage({
     super.key,
     required this.recipient,
     required this.deliveryAddress,
+    required this.pickupAddress,
   });
 
   @override
@@ -110,6 +113,7 @@ class _UploadImagePageState extends State<UploadImagePage> {
         builder: (context) => DeliveryDetailsPage(
           recipient: widget.recipient,
           deliveryAddress: widget.deliveryAddress,
+          pickupAddress: widget.pickupAddress,
           packageImage: File(_selectedImage!.path),
         ),
       ),

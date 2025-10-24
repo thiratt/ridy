@@ -1,5 +1,6 @@
 import 'dart:io';
-import 'package:app/models/user_summary.dart';
+import 'package:app/models/response/all_users.dart';
+import 'package:app/models/user_information.dart';
 import 'package:app/shared/provider.dart';
 import 'package:app/widgets/button.dart';
 import 'package:flutter/material.dart';
@@ -46,12 +47,14 @@ class _DeliveryDetailsTexts {
 class DeliveryDetailsPage extends StatefulWidget {
   final UserInformation recipient;
   final Address deliveryAddress;
+  final Address pickupAddress;
   final File packageImage;
 
   const DeliveryDetailsPage({
     super.key,
     required this.recipient,
     required this.deliveryAddress,
+    required this.pickupAddress,
     required this.packageImage,
   });
 
@@ -147,9 +150,8 @@ class _DeliveryDetailsPageState extends State<DeliveryDetailsPage> {
                 children: [
                   _buildUserInfo(
                     label: _DeliveryDetailsTexts.senderLabel,
-                    fullName: currentUser.fullName,
-                    avatarUrl: provider.getFormattedAvatarUrl(),
-                    // address: currentUser.address ?? '-', // เพิ่มที่อยู่ใต้ชื่อ
+                    user: currentUser,
+                    address: widget.pickupAddress.addressText,
                   ),
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 8.0),
@@ -157,11 +159,7 @@ class _DeliveryDetailsPageState extends State<DeliveryDetailsPage> {
                   ),
                   _buildUserInfo(
                     label: _DeliveryDetailsTexts.recipientLabel,
-                    fullName: widget.recipient.fullName,
-                    avatarUrl: widget.recipient.avatarUrl.replaceAll(
-                      "localhost",
-                      "10.0.2.2",
-                    ),
+                    user: widget.recipient,
                     address: widget
                         .deliveryAddress
                         .addressText, // เพิ่มที่อยู่ใต้ชื่อ
@@ -171,18 +169,18 @@ class _DeliveryDetailsPageState extends State<DeliveryDetailsPage> {
             },
           ),
 
-          SizedBox(height: _DeliveryDetailsConfig.verticalSpacing),
+          // SizedBox(height: _DeliveryDetailsConfig.verticalSpacing),
 
-          // Phone number
-          _buildInfoRow(
-            _DeliveryDetailsTexts.phoneLabel,
-            widget.recipient.phoneNumber,
-          ),
+          // // Phone number
+          // _buildInfoRow(
+          //   _DeliveryDetailsTexts.phoneLabel,
+          //   widget.recipient.phoneNumber,
+          // ),
 
-          SizedBox(height: _DeliveryDetailsConfig.verticalSpacing),
+          // SizedBox(height: _DeliveryDetailsConfig.verticalSpacing),
 
-          // Address
-          _buildAddressRow(),
+          // // Address
+          // _buildAddressRow(),
         ],
       ),
     );
@@ -190,9 +188,8 @@ class _DeliveryDetailsPageState extends State<DeliveryDetailsPage> {
 
   Widget _buildUserInfo({
     required String label,
-    required String fullName,
-    required String avatarUrl,
-    String? address, // 👈 เพิ่มพารามิเตอร์นี้
+    required UserInformation user,
+    String? address,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -206,6 +203,8 @@ class _DeliveryDetailsPageState extends State<DeliveryDetailsPage> {
         ),
         const SizedBox(height: 8),
         Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: 8,
           children: [
             Container(
               width: _DeliveryDetailsConfig.avatarSize,
@@ -216,26 +215,25 @@ class _DeliveryDetailsPageState extends State<DeliveryDetailsPage> {
               ),
               child: ClipOval(
                 child: Image.network(
-                  avatarUrl,
+                  user.avatarUrl,
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) =>
                       Icon(Icons.person, color: Colors.grey.shade600, size: 20),
                 ),
               ),
             ),
-            const SizedBox(width: 8),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   Text(
-                    fullName,
-                    style: TextStyle(
-                      fontSize: _DeliveryDetailsConfig.valueFontSize,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                    user.fullname,
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
+                  Text(
+                    user.phoneNumber,
+                    style: Theme.of(context).textTheme.bodySmall,
                   ),
                   if (address != null) ...[
                     const SizedBox(height: 4),

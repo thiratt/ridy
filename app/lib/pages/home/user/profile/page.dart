@@ -26,7 +26,7 @@ class UserProfilePage extends StatelessWidget {
     return Consumer<RidyProvider>(
       builder: (context, provider, child) {
         final user = provider.currentUser;
-        final userName = user?.fullName ?? 'ผู้ใช้งาน';
+        final userName = user?.fullname ?? 'ผู้ใช้งาน';
 
         return Container(
           padding: const EdgeInsets.all(32),

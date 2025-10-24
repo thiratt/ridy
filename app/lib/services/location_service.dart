@@ -101,7 +101,7 @@ class LocationService {
 }
 
 class DeliveryService {
-  static const String _baseUrl = 'http://10.0.2.2:5200';
+  static const String _baseUrl = 'http://100.69.213.128:5200';
 
   static Future<List<Delivery>> getUserDeliveries(String userId) async {
     try {
