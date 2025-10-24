@@ -35,7 +35,9 @@ namespace server.Controllers
                     Firstname = a.Firstname,
                     Lastname = a.Lastname,
                     AvatarUrl = a.AvatarUrl,
-                    FullName = (a.Firstname ?? "") + " " + (a.Lastname ?? ""),
+                    FullName = string.IsNullOrEmpty(a.Firstname) && string.IsNullOrEmpty(a.Lastname)
+                        ? a.Firstname
+                        : (a.Firstname + " " + a.Lastname).Trim(),
                     CreatedAt = a.CreatedAt
                 })
                 .OrderBy(u => u.FullName)
