@@ -41,6 +41,8 @@ class RidyApplication extends StatelessWidget {
         '/auth/signup/user/address/select': (context) =>
             const SelectLocationPage(),
         '/auth/signup/rider': (context) => const RiderSignupPage(),
+
+        '/home/user': (context) => const UserHomePage(),
       },
       onGenerateRoute: (settings) => MaterialPageRoute(
         builder: (context) {
@@ -52,12 +54,6 @@ class RidyApplication extends StatelessWidget {
                   : null;
               if (draft != null) {
                 return UserSignupAddAddressPage(draft: draft);
-              }
-              break;
-            case '/home/user':
-              final uid = settings.arguments as String?;
-              if (uid != null) {
-                return UserHomePage(uid: uid);
               }
               break;
           }

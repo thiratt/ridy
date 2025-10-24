@@ -18,7 +18,7 @@ class _HomeWrapperState extends State<HomeWrapper> {
   void initState() {
     super.initState();
     _pages = [
-      UserHomePage(uid: widget.uid),
+      UserHomePage(),
       Container(color: Colors.blueAccent), // TODO: UserShipmentPage
       UserProfilePage(),
     ];
