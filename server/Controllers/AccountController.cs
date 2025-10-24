@@ -54,6 +54,7 @@ namespace server.Controllers
                     PickupAddresses = a.UserPickupAddresses.Select(upa => new Models.Response.UserPickupAddress
                     {
                         Id = upa.Id,
+                        Label = upa.Label,
                         AddressText = upa.AddressText,
                         Latitude = upa.Location.X,
                         Longitude = upa.Location.Y,
