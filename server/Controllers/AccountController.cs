@@ -19,52 +19,50 @@ namespace server.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAllUsers([FromQuery] Guid? excludeUserId = null)
         {
+            // Base query
             var query = _context.Accounts
-                .Where(a => a.Role == "USER");
+                .Where(a => a.Role == "USER")
+                .Include(a => a.UserAddresses)
+                .Include(a => a.UserPickupAddresses)
+                .AsSplitQuery();
 
             if (excludeUserId.HasValue)
             {
                 query = query.Where(a => a.Id != excludeUserId.Value);
             }
 
-            var users = await query
-                .Include(a => a.UserAddresses)
-                .Include(a => a.UserPickupAddresses)
-                .Select(a => new Models.Response.UserSummary
+            var dbUsers = await query.ToListAsync();
+
+            var users = dbUsers.Select(a => new Models.Response.Account
+            {
+                Id = a.Id,
+                PhoneNumber = a.PhoneNumber,
+                Firstname = a.Firstname,
+                Lastname = a.Lastname,
+                AvatarUrl = a.AvatarUrl,
+                Role = a.Role,
+                CreatedAt = ThaiDateConvertor.ToThaiDateString(a.CreatedAt),
+                Addresses = [.. a.UserAddresses.Select(ua => new Models.Response.UserAddress
                 {
-                    Id = a.Id,
-                    PhoneNumber = a.PhoneNumber,
-                    Firstname = a.Firstname,
-                    Lastname = a.Lastname,
-
-                    AvatarUrl = a.AvatarUrl,
-                    FullName = string.IsNullOrEmpty(a.Firstname) && string.IsNullOrEmpty(a.Lastname)
-                        ? a.Firstname
-                        : (a.Firstname + " " + a.Lastname).Trim(),
-                    CreatedAt = a.CreatedAt,
-                    Addresses = a.UserAddresses.Select(ua => new Models.Response.UserAddress
-                    {
-                        Id = ua.Id,
-                        AddressText = ua.AddressText,
-                        Label = ua.Label,
-                        Latitude = ua.Location.X,
-                        Longitude = ua.Location.Y,
-                        CreatedAt = ua.CreatedAt
-                    }).ToList(),
-                    PickupAddresses = a.UserPickupAddresses.Select(upa => new Models.Response.UserPickupAddress
-                    {
-                        Id = upa.Id,
-                        Label = upa.Label,
-                        AddressText = upa.AddressText,
-                        Latitude = upa.Location.X,
-                        Longitude = upa.Location.Y,
-                        CreatedAt = upa.CreatedAt
-                    }).ToList()
-                })
-                .AsSplitQuery()
-                .OrderBy(u => u.FullName)
-                .ToListAsync();
-
+                    Id = ua.Id,
+                    AddressText = ua.AddressText,
+                    Label = ua.Label,
+                    Latitude = ua.Location.X,
+                    Longitude = ua.Location.Y,
+                    CreatedAt = ua.CreatedAt
+                })],
+                PickupAddresses = [.. a.UserPickupAddresses.Select(upa => new Models.Response.UserPickupAddress
+                {
+                    Id = upa.Id,
+                    Label = upa.Label,
+                    AddressText = upa.AddressText,
+                    Latitude = upa.Location.X,
+                    Longitude = upa.Location.Y,
+                    CreatedAt = upa.CreatedAt
+                })]
+            })
+            .OrderBy(u => u.Fullname)
+            .ToList();
 
             var successResponse = new Models.Response.SuccessResponse
             {
@@ -119,7 +117,7 @@ namespace server.Controllers
                     VehiclePlate = riderProfile.VehiclePlate,
                     VehiclePhotoUrl = riderProfile.VehiclePhotoUrl
                 } : null,
-                UserAddresses = [.. account.UserAddresses.Select(ua => new Models.Response.UserAddress
+                Addresses = [.. account.UserAddresses.Select(ua => new Models.Response.UserAddress
                 {
                     Id = ua.Id,
                     AddressText = ua.AddressText,
@@ -128,7 +126,7 @@ namespace server.Controllers
                     Longitude = ua.Location.X,
                     CreatedAt = ua.CreatedAt
                 })],
-                UserPickupAddresses = [.. account.UserPickupAddresses.Select(upa => new Models.Response.UserPickupAddress
+                PickupAddresses = [.. account.UserPickupAddresses.Select(upa => new Models.Response.UserPickupAddress
                 {
                     Id = upa.Id,
                     Label = upa.Label,
@@ -183,6 +181,8 @@ namespace server.Controllers
         {
             // Get all accounts with the same phone number
             var accounts = await _context.Accounts
+                .Include(a => a.UserAddresses)
+                .Include(a => a.UserPickupAddresses)
                 .Where(a => a.PhoneNumber == request.PhoneNumber)
                 .ToListAsync();
 
@@ -224,11 +224,47 @@ namespace server.Controllers
             if (validAccounts.Count == 1)
             {
                 var account = validAccounts.First();
+                var riderProfile = await _context.RiderProfiles.FirstOrDefaultAsync(rp => rp.RiderId == account.Id);
+                var accountResponse = new Models.Response.Account
+                {
+                    Id = account.Id,
+                    PhoneNumber = account.PhoneNumber,
+                    Firstname = account.Firstname,
+                    Lastname = account.Lastname,
+                    AvatarUrl = account.AvatarUrl,
+                    Role = account.Role,
+                    CreatedAt = ThaiDateConvertor.ToThaiDateString(account.CreatedAt),
+                    UpdatedAt = ThaiDateConvertor.ToThaiDateString(account.UpdatedAt),
+                    RiderProfile = riderProfile != null ? new Models.Response.RiderProfile
+                    {
+                        RiderId = riderProfile.RiderId,
+                        VehiclePlate = riderProfile.VehiclePlate,
+                        VehiclePhotoUrl = riderProfile.VehiclePhotoUrl
+                    } : null,
+                    Addresses = account.UserAddresses.Select(ua => new Models.Response.UserAddress
+                    {
+                        Id = ua.Id,
+                        AddressText = ua.AddressText,
+                        Label = ua.Label,
+                        Latitude = ua.Location.Y,
+                        Longitude = ua.Location.X,
+                        CreatedAt = ua.CreatedAt
+                    }).ToList(),
+                    PickupAddresses = account.UserPickupAddresses.Select(upa => new Models.Response.UserPickupAddress
+                    {
+                        Id = upa.Id,
+                        Label = upa.Label,
+                        AddressText = upa.AddressText,
+                        Latitude = upa.Location.Y,
+                        Longitude = upa.Location.X,
+                        CreatedAt = upa.CreatedAt
+                    }).ToList()
+                };
                 return Ok(new Models.Response.SuccessResponse
                 {
                     Status = Models.Enum.ResponseStatus.Success,
                     Message = "เข้าสู่ระบบสำเร็จ",
-                    Data = CreatedAtAction(nameof(GetAccountById), new { id = account.Id })
+                    Data = accountResponse
                 });
             }
 
@@ -297,19 +333,48 @@ namespace server.Controllers
                     });
                 }
 
+                var riderProfile = await _context.RiderProfiles.FirstOrDefaultAsync(rp => rp.RiderId == targetAccount.Id);
+                var accountResponse = new Models.Response.Account
+                {
+                    Id = targetAccount.Id,
+                    PhoneNumber = targetAccount.PhoneNumber,
+                    Firstname = targetAccount.Firstname,
+                    Lastname = targetAccount.Lastname,
+                    AvatarUrl = targetAccount.AvatarUrl,
+                    Role = targetAccount.Role,
+                    CreatedAt = ThaiDateConvertor.ToThaiDateString(targetAccount.CreatedAt),
+                    UpdatedAt = ThaiDateConvertor.ToThaiDateString(targetAccount.UpdatedAt),
+                    RiderProfile = riderProfile != null ? new Models.Response.RiderProfile
+                    {
+                        RiderId = riderProfile.RiderId,
+                        VehiclePlate = riderProfile.VehiclePlate,
+                        VehiclePhotoUrl = riderProfile.VehiclePhotoUrl
+                    } : null,
+                    Addresses = targetAccount.UserAddresses.Select(ua => new Models.Response.UserAddress
+                    {
+                        Id = ua.Id,
+                        AddressText = ua.AddressText,
+                        Label = ua.Label,
+                        Latitude = ua.Location.Y,
+                        Longitude = ua.Location.X,
+                        CreatedAt = ua.CreatedAt
+                    }).ToList(),
+                    PickupAddresses = targetAccount.UserPickupAddresses.Select(upa => new Models.Response.UserPickupAddress
+                    {
+                        Id = upa.Id,
+                        Label = upa.Label,
+                        AddressText = upa.AddressText,
+                        Latitude = upa.Location.Y,
+                        Longitude = upa.Location.X,
+                        CreatedAt = upa.CreatedAt
+                    }).ToList()
+                };
+
                 return Ok(new Models.Response.SuccessResponse
                 {
                     Status = Models.Enum.ResponseStatus.Success,
                     Message = "เข้าสู่ระบบสำเร็จ",
-                    Data = new
-                    {
-                        id = targetAccount.Id,
-                        role = targetAccount.Role,
-                        phoneNumber = targetAccount.PhoneNumber,
-                        firstname = targetAccount.Firstname,
-                        lastname = targetAccount.Lastname,
-                        avatarUrl = targetAccount.AvatarUrl
-                    }
+                    Data = accountResponse
                 });
             }
             catch (Exception ex)
@@ -500,6 +565,36 @@ namespace server.Controllers
                 }
 
                 await _context.SaveChangesAsync();
+
+                var accountResponse = new Models.Response.Account
+                {
+                    Id = newAccount.Id,
+                    PhoneNumber = newAccount.PhoneNumber,
+                    Firstname = newAccount.Firstname,
+                    Lastname = newAccount.Lastname,
+                    AvatarUrl = newAccount.AvatarUrl,
+                    Role = newAccount.Role,
+                    CreatedAt = ThaiDateConvertor.ToThaiDateString(newAccount.CreatedAt),
+                    UpdatedAt = ThaiDateConvertor.ToThaiDateString(newAccount.UpdatedAt),
+                    Addresses = newAccount.UserAddresses.Select(ua => new Models.Response.UserAddress
+                    {
+                        Id = ua.Id,
+                        AddressText = ua.AddressText,
+                        Label = ua.Label,
+                        Latitude = ua.Location.Y,
+                        Longitude = ua.Location.X,
+                        CreatedAt = ua.CreatedAt
+                    }).ToList(),
+                    PickupAddresses = newAccount.UserPickupAddresses.Select(upa => new Models.Response.UserPickupAddress
+                    {
+                        Id = upa.Id,
+                        Label = upa.Label,
+                        AddressText = upa.AddressText,
+                        Latitude = upa.Location.Y,
+                        Longitude = upa.Location.X,
+                        CreatedAt = upa.CreatedAt
+                    }).ToList()
+                };
 
                 var successResponse = new Models.Response.SuccessResponse
                 {
