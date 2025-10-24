@@ -6,8 +6,6 @@ import 'package:http/http.dart' as http;
 import '../models/delivery.dart';
 
 class LocationService {
-  static const String _baseUrl = 'http://10.0.2.2:5200';
-
   static Future<Position?> getCurrentLocation() async {
     try {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
