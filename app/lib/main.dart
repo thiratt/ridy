@@ -7,13 +7,20 @@ import 'package:app/pages/auth/signup/user/page.dart';
 import 'package:app/pages/auth/signup/user/select_address.dart';
 import 'package:app/pages/home/user/page.dart';
 import 'package:app/pages/onboarding.dart';
+import 'package:app/shared/provider.dart';
 import 'package:app/themes/app_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 Future<void> main() async {
   await dotenv.load();
-  runApp(const RidyApplication());
+  runApp(
+    MultiProvider(
+      providers: [ChangeNotifierProvider(create: (_) => RidyProvider())],
+      child: const RidyApplication(),
+    ),
+  );
 }
 
 class RidyApplication extends StatelessWidget {
