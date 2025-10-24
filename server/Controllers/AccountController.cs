@@ -206,7 +206,8 @@ namespace server.Controllers
                         role = account.Role,
                         phoneNumber = account.PhoneNumber,
                         firstname = account.Firstname,
-                        lastname = account.Lastname
+                        lastname = account.Lastname,
+                        avatarUrl = account.AvatarUrl
                     }
                 });
             }
@@ -286,7 +287,8 @@ namespace server.Controllers
                         role = targetAccount.Role,
                         phoneNumber = targetAccount.PhoneNumber,
                         firstname = targetAccount.Firstname,
-                        lastname = targetAccount.Lastname
+                        lastname = targetAccount.Lastname,
+                        avatarUrl = targetAccount.AvatarUrl
                     }
                 });
             }
@@ -487,7 +489,8 @@ namespace server.Controllers
                         role = newAccount.Role,
                         phoneNumber = newAccount.PhoneNumber,
                         firstname = newAccount.Firstname,
-                        lastname = newAccount.Lastname
+                        lastname = newAccount.Lastname,
+                        avatarUrl = newAccount.AvatarUrl
                     }
                 };
 
