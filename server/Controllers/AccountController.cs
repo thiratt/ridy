@@ -484,6 +484,10 @@ namespace server.Controllers
                     Data = new
                     {
                         id = newAccount.Id,
+                        role = newAccount.Role,
+                        phoneNumber = newAccount.PhoneNumber,
+                        firstname = newAccount.Firstname,
+                        lastname = newAccount.Lastname
                     }
                 };
 
