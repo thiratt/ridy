@@ -469,11 +469,12 @@ class _RidyMapState extends State<RidyMap> with TickerProviderStateMixin {
                     height: 50,
                     child: const CurrentLocationDot(),
                   ),
-                  if (widget.additionalMarkers != null)
-                    ...widget.additionalMarkers!,
                 ],
               ),
             if (widget.additionalLayers != null) ...widget.additionalLayers!,
+
+            if (widget.additionalMarkers != null)
+              MarkerLayer(markers: widget.additionalMarkers!),
           ],
         ),
 
