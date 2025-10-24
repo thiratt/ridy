@@ -61,8 +61,8 @@ class _CurrentLocationDotState extends State<CurrentLocationDot>
           ),
 
           Container(
-            width: widget.size * 1.4,
-            height: widget.size * 1.4,
+            width: widget.size * 1.1,
+            height: widget.size * 1.1,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: Colors.white,
