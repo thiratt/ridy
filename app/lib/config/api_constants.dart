@@ -7,6 +7,8 @@ sealed class ApiRoute {
   static const login = _RidyRoute('/account/login');
   static const loginWithRole = _RidyRoute('/account/login/select-role');
   static const checkPhoneNumber = _RidyRoute('/account/check-phone');
+  static const getAllUsers = _RidyRoute('/account');
+  static const register = _RidyRoute('/account/signup');
 }
 
 class _RidyRoute extends ApiRoute {
