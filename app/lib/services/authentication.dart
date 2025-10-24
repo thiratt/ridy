@@ -3,16 +3,27 @@ import 'dart:convert';
 import 'package:app/config/api_constants.dart';
 import 'package:app/models/request/login_request.dart';
 import 'package:app/models/request/login_with_role_request.dart';
+import 'package:app/models/request/signup_request.dart';
 import 'package:app/models/response/login_response.dart';
 import 'package:app/models/response/role_selection_response.dart';
+import 'package:app/models/response/signup_response.dart';
 import 'package:app/shared/provider.dart';
 import 'package:app/utils/request_helper.dart';
+import 'package:dio/dio.dart';
 import 'package:http/http.dart' as http;
 
 enum LoginResult {
   success,
   roleSelectionRequired,
   invalidCredentials,
+  serverError,
+  networkError,
+}
+
+enum SignupResult {
+  success,
+  phoneNumberAlreadyExists,
+  validationError,
   serverError,
   networkError,
 }
@@ -29,6 +40,14 @@ class AuthLoginResponse {
     this.userData,
     this.availableRoles,
   });
+}
+
+class AuthSignupResponse {
+  final SignupResult result;
+  final String? message;
+  final UserData? userData;
+
+  AuthSignupResponse({required this.result, this.message, this.userData});
 }
 
 class AuthenticationService {
@@ -144,6 +163,168 @@ class AuthenticationService {
         result: LoginResult.serverError,
         message: 'เกิดข้อผิดพลาด: ${response.reasonPhrase ?? 'ไม่ทราบสาเหตุ'}',
       );
+    }
+  }
+
+  Future<AuthSignupResponse> signup(SignupRequest signupRequest) async {
+    try {
+      final dio = Dio();
+      dio.options.connectTimeout = const Duration(seconds: 30);
+      dio.options.receiveTimeout = const Duration(seconds: 30);
+
+      final Map<String, dynamic> formDataMap = {
+        'PhoneNumber': signupRequest.phoneNumber,
+        'Password': signupRequest.password,
+        'Firstname': signupRequest.firstname,
+        'Lastname': signupRequest.lastname ?? '',
+        'Role': signupRequest.role,
+        'AvatarFileData': await MultipartFile.fromFile(
+          signupRequest.avatarFileData.path,
+          filename: 'avatar.jpg',
+        ),
+      };
+
+      if (signupRequest.mainAddressTexts != null &&
+          signupRequest.mainAddressTexts!.isNotEmpty) {
+        formDataMap['MainAddressTexts'] = signupRequest.mainAddressTexts;
+        formDataMap['MainAddressLabels'] = signupRequest.mainAddressLabels;
+        formDataMap['MainAddressLatitudes'] =
+            signupRequest.mainAddressLatitudes;
+        formDataMap['MainAddressLongitudes'] =
+            signupRequest.mainAddressLongitudes;
+      }
+
+      if (signupRequest.pickupAddressTexts != null &&
+          signupRequest.pickupAddressTexts!.isNotEmpty) {
+        formDataMap['PickupAddressTexts'] = signupRequest.pickupAddressTexts;
+        formDataMap['PickupAddressLatitudes'] =
+            signupRequest.pickupAddressLatitudes;
+        formDataMap['PickupAddressLongitudes'] =
+            signupRequest.pickupAddressLongitudes;
+      }
+
+      if (signupRequest.addressText != null) {
+        formDataMap['AddressText'] = signupRequest.addressText;
+        formDataMap['AddressLabel'] = signupRequest.addressLabel;
+        formDataMap['AddressLatitude'] = signupRequest.addressLatitude;
+        formDataMap['AddressLongitude'] = signupRequest.addressLongitude;
+      }
+
+      if (signupRequest.pickupAddressText != null) {
+        formDataMap['PickupAddressText'] = signupRequest.pickupAddressText;
+        formDataMap['PickupAddressLatitude'] =
+            signupRequest.pickupAddressLatitude;
+        formDataMap['PickupAddressLongitude'] =
+            signupRequest.pickupAddressLongitude;
+      }
+
+      final formData = FormData.fromMap(formDataMap);
+      final response = await dio.post(
+        ApiConstants.buildUrlEndpoint(ApiRoute.register),
+        data: formData,
+      );
+
+      return _handleSignupResponse(response);
+    } catch (e) {
+      if (e is DioException) {
+        if (e.type == DioExceptionType.connectionTimeout ||
+            e.type == DioExceptionType.receiveTimeout ||
+            e.type == DioExceptionType.sendTimeout) {
+          return AuthSignupResponse(
+            result: SignupResult.networkError,
+            message: 'การเชื่อมต่อหมดเวลา กรุณาลองใหม่อีกครั้ง',
+          );
+        } else if (e.response?.statusCode == 409) {
+          return AuthSignupResponse(
+            result: SignupResult.phoneNumberAlreadyExists,
+            message: 'หมายเลขโทรศัพท์นี้ถูกใช้แล้ว กรุณาใช้หมายเลขอื่น',
+          );
+        }
+      }
+
+      return AuthSignupResponse(
+        result: SignupResult.networkError,
+        message: e.toString(),
+      );
+    }
+  }
+
+  AuthSignupResponse _handleSignupResponse(Response response) {
+    if (response.statusCode == 200) {
+      try {
+        final signupResponse = signupResponseFromJson(
+          json.encode(response.data),
+        );
+        final userData = signupResponse.data;
+
+        final user = UserData(
+          id: userData.id,
+          role: userData.role,
+          phoneNumber: userData.phoneNumber,
+          firstname: userData.firstname,
+          lastname: userData.lastname,
+        );
+
+        return AuthSignupResponse(result: SignupResult.success, userData: user);
+      } catch (e) {
+        return AuthSignupResponse(
+          result: SignupResult.serverError,
+          message: 'เกิดข้อผิดพลาดในการประมวลผลข้อมูล',
+        );
+      }
+    } else if (response.statusCode == 409) {
+      return AuthSignupResponse(
+        result: SignupResult.phoneNumberAlreadyExists,
+        message: 'หมายเลขโทรศัพท์นี้ถูกใช้แล้ว กรุณาใช้หมายเลขอื่น',
+      );
+    } else if (response.statusCode == 400) {
+      return AuthSignupResponse(
+        result: SignupResult.validationError,
+        message: 'ข้อมูลที่กรอกไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง',
+      );
+    } else if (response.statusCode != null && response.statusCode! >= 500) {
+      return AuthSignupResponse(
+        result: SignupResult.serverError,
+        message: 'เซิร์ฟเวอร์ขัดข้อง กรุณาลองใหม่ภายหลัง',
+      );
+    } else {
+      return AuthSignupResponse(
+        result: SignupResult.serverError,
+        message: 'เกิดข้อผิดพลาด: ${response.statusMessage ?? 'ไม่ทราบสาเหตุ'}',
+      );
+    }
+  }
+
+  Future<bool> checkPhoneNumberAvailability(
+    String phoneNumber,
+    String role,
+  ) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse(ApiConstants.buildUrlEndpoint(ApiRoute.checkPhoneNumber)),
+            headers: buildHeaders(),
+            body: json.encode({
+              'phoneNumber': phoneNumber.trim(),
+              'role': role,
+            }),
+          )
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () {
+              throw 'การเชื่อมต่อหมดเวลา กรุณาลองใหม่อีกครั้ง';
+            },
+          );
+
+      if (response.statusCode == 200) {
+        return true; // Phone number is available
+      } else if (response.statusCode == 409) {
+        return false; // Phone number already exists
+      } else {
+        throw 'เกิดข้อผิดพลาดในการตรวจสอบเบอร์โทรศัพท์';
+      }
+    } catch (e) {
+      rethrow;
     }
   }
 

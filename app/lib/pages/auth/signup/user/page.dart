@@ -1,13 +1,10 @@
-import 'dart:developer';
 import 'dart:io';
-import 'dart:convert';
-import 'package:app/config/api_constants.dart';
 import 'package:app/models/user_signup_draft.dart';
 import 'package:app/pages/auth/signup/user/add_address.dart';
+import 'package:app/services/authentication.dart';
 import 'package:app/utils/navigation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 
 import 'package:app/widgets/text_field.dart';
@@ -101,7 +98,6 @@ class _UserSignupPageState extends State<UserSignupPage> {
       return 'รูปแบบหมายเลขโทรศัพท์ไม่ถูกต้อง';
     }
 
-    // Check for phone availability error
     if (_phoneAvailabilityError != null) {
       return _phoneAvailabilityError;
     }
@@ -228,35 +224,12 @@ class _UserSignupPageState extends State<UserSignupPage> {
 
   Future<bool> _checkPhoneNumberAvailability(String phoneNumber) async {
     try {
-      final response = await http
-          .post(
-            Uri.parse(ApiConstants.buildUrlEndpoint(ApiRoute.checkPhoneNumber)),
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            },
-            body: json.encode({
-              'phoneNumber': phoneNumber.trim(),
-              'role': 'USER',
-            }),
-          )
-          .timeout(
-            const Duration(seconds: 30),
-            onTimeout: () {
-              throw 'การเชื่อมต่อหมดเวลา กรุณาลองใหม่อีกครั้ง';
-            },
-          );
-
-      if (response.statusCode == 200) {
-        return true;
-      } else if (response.statusCode == 409) {
-        // Phone number already exists
-        return false;
-      } else {
-        throw 'เกิดข้อผิดพลาดในการตรวจสอบเบอร์โทรศัพท์';
-      }
+      final authService = AuthenticationService();
+      return await authService.checkPhoneNumberAvailability(
+        phoneNumber,
+        'USER',
+      );
     } catch (e) {
-      // If there's a network error, we'll show the error but not block the user
       rethrow;
     }
   }
@@ -264,7 +237,6 @@ class _UserSignupPageState extends State<UserSignupPage> {
   Future<void> _handleNext() async {
     FocusScope.of(context).requestFocus(FocusNode());
 
-    // Clear any previous phone availability error
     _clearPhoneAvailabilityError();
 
     if (!_formKey.currentState!.validate()) {
@@ -277,7 +249,6 @@ class _UserSignupPageState extends State<UserSignupPage> {
       return;
     }
 
-    // Show loading indicator
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -285,11 +256,9 @@ class _UserSignupPageState extends State<UserSignupPage> {
     );
 
     try {
-      // Check if phone number is already in use
       final phoneNumber = _phoneController.text.trim();
       final isPhoneAvailable = await _checkPhoneNumberAvailability(phoneNumber);
 
-      // Hide loading indicator
       if (mounted) {
         Navigator.of(context).pop();
       }
@@ -300,7 +269,6 @@ class _UserSignupPageState extends State<UserSignupPage> {
               'หมายเลขโทรศัพท์นี้ถูกใช้งานแล้ว กรุณาใช้หมายเลขอื่น';
         });
 
-        // Trigger form validation to show the error in the phone field
         _formKey.currentState!.validate();
 
         if (mounted) {
@@ -309,7 +277,6 @@ class _UserSignupPageState extends State<UserSignupPage> {
         return;
       }
 
-      // If phone is available, proceed to next page
       final draft = UserSignupDraft(
         firstname: _firstNameController.text.trim(),
         lastname: _lastNameController.text.trim().isEmpty
@@ -328,7 +295,6 @@ class _UserSignupPageState extends State<UserSignupPage> {
         );
       }
     } catch (e) {
-      // Hide loading indicator if still showing
       if (mounted && Navigator.of(context).canPop()) {
         Navigator.of(context).pop();
       }

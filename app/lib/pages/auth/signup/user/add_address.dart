@@ -1,12 +1,15 @@
+import 'package:app/models/request/signup_request.dart';
 import 'package:app/models/user_signup_draft.dart';
 import 'package:app/pages/auth/signup/user/select_address.dart';
+import 'package:app/services/authentication.dart';
+import 'package:app/shared/provider.dart';
 import 'package:app/utils/navigation.dart';
 import 'package:app/widgets/address_picker.dart';
 import 'package:app/widgets/home_wrapper.dart';
 import 'package:flutter/material.dart';
 import 'package:app/widgets/text_field.dart';
 import 'package:app/widgets/button.dart';
-import 'package:dio/dio.dart';
+import 'package:provider/provider.dart';
 
 class UserSignupAddAddressPage extends StatefulWidget {
   final UserSignupDraft draft;
@@ -37,7 +40,6 @@ class _UserSignupAddAddressPageState extends State<UserSignupAddAddressPage> {
   static const String _createAccountButtonText = 'สร้างบัญชี';
   static const String _defaultMainLabel = 'บ้าน';
   static const String _defaultPickupLabel = 'รับสินค้า';
-  static const String _apiEndpoint = 'http://10.0.2.2:5200/account/register';
 
   @override
   void initState() {
@@ -320,86 +322,89 @@ class _UserSignupAddAddressPageState extends State<UserSignupAddAddressPage> {
   }
 
   Future<void> _performRegistration() async {
-    final dio = Dio();
+    final authService = AuthenticationService();
+    final provider = Provider.of<RidyProvider>(context, listen: false);
 
-    dio.options.connectTimeout = const Duration(seconds: 30);
-    dio.options.receiveTimeout = const Duration(seconds: 30);
+    final signupRequest = SignupRequest(
+      phoneNumber: widget.draft.phone,
+      password: widget.draft.password,
+      firstname: widget.draft.firstname,
+      lastname: widget.draft.lastname,
+      role: 'USER',
+      avatarFileData: widget.draft.avatar,
+      mainAddressTexts: _mainAddresses.isNotEmpty
+          ? _mainAddresses.map((addr) => addr.text).toList()
+          : null,
+      mainAddressLabels: _mainAddresses.isNotEmpty
+          ? _mainAddresses.map((addr) => addr.label).toList()
+          : null,
+      mainAddressLatitudes: _mainAddresses.isNotEmpty
+          ? _mainAddresses.map((addr) => addr.lat).toList()
+          : null,
+      mainAddressLongitudes: _mainAddresses.isNotEmpty
+          ? _mainAddresses.map((addr) => addr.lng).toList()
+          : null,
+      pickupAddressTexts: _pickupAddresses.isNotEmpty
+          ? _pickupAddresses.map((addr) => addr.text).toList()
+          : null,
+      pickupAddressLatitudes: _pickupAddresses.isNotEmpty
+          ? _pickupAddresses.map((addr) => addr.lat).toList()
+          : null,
+      pickupAddressLongitudes: _pickupAddresses.isNotEmpty
+          ? _pickupAddresses.map((addr) => addr.lng).toList()
+          : null,
+      addressText: _mainAddresses.isNotEmpty ? _mainAddresses.first.text : null,
+      addressLabel: _mainAddresses.isNotEmpty
+          ? _mainAddresses.first.label
+          : null,
+      addressLatitude: _mainAddresses.isNotEmpty
+          ? _mainAddresses.first.lat
+          : null,
+      addressLongitude: _mainAddresses.isNotEmpty
+          ? _mainAddresses.first.lng
+          : null,
+      pickupAddressText: _pickupAddresses.isNotEmpty
+          ? _pickupAddresses.first.text
+          : null,
+      pickupAddressLatitude: _pickupAddresses.isNotEmpty
+          ? _pickupAddresses.first.lat
+          : null,
+      pickupAddressLongitude: _pickupAddresses.isNotEmpty
+          ? _pickupAddresses.first.lng
+          : null,
+    );
 
-    final Map<String, dynamic> formDataMap = {
-      'PhoneNumber': widget.draft.phone,
-      'Password': widget.draft.password,
-      'Firstname': widget.draft.firstname,
-      'Lastname': widget.draft.lastname ?? '',
-      'Role': 'USER',
-      'AvatarFileData': await MultipartFile.fromFile(
-        widget.draft.avatar.path,
-        filename: 'avatar.jpg',
-      ),
-    };
+    final response = await authService.signup(signupRequest);
 
-    if (_mainAddresses.isNotEmpty) {
-      formDataMap['MainAddressTexts'] = _mainAddresses
-          .map((addr) => addr.text)
-          .toList();
-      formDataMap['MainAddressLabels'] = _mainAddresses
-          .map((addr) => addr.label)
-          .toList();
-      formDataMap['MainAddressLatitudes'] = _mainAddresses
-          .map((addr) => addr.lat)
-          .toList();
-      formDataMap['MainAddressLongitudes'] = _mainAddresses
-          .map((addr) => addr.lng)
-          .toList();
-    }
-
-    if (_pickupAddresses.isNotEmpty) {
-      formDataMap['PickupAddressTexts'] = _pickupAddresses
-          .map((addr) => addr.text)
-          .toList();
-      formDataMap['PickupAddressLatitudes'] = _pickupAddresses
-          .map((addr) => addr.lat)
-          .toList();
-      formDataMap['PickupAddressLongitudes'] = _pickupAddresses
-          .map((addr) => addr.lng)
-          .toList();
-    }
-
-    if (_mainAddresses.isNotEmpty) {
-      final firstMainAddress = _mainAddresses.first;
-      formDataMap['AddressText'] = firstMainAddress.text;
-      formDataMap['AddressLabel'] = firstMainAddress.label;
-      formDataMap['AddressLatitude'] = firstMainAddress.lat;
-      formDataMap['AddressLongitude'] = firstMainAddress.lng;
-    }
-
-    if (_pickupAddresses.isNotEmpty) {
-      final firstPickupAddress = _pickupAddresses.first;
-      formDataMap['PickupAddressText'] = firstPickupAddress.text;
-      formDataMap['PickupAddressLatitude'] = firstPickupAddress.lat;
-      formDataMap['PickupAddressLongitude'] = firstPickupAddress.lng;
-    }
-
-    final formData = FormData.fromMap(formDataMap);
-    final response = await dio.post(_apiEndpoint, data: formData);
-
-    if (response.statusCode == 200) {
-      await _handleSuccessfulRegistration(response);
-    } else {
-      throw 'การสมัครสมาชิกไม่สำเร็จ รหัสข้อผิดพลาด: ${response.statusCode}';
+    switch (response.result) {
+      case SignupResult.success:
+        if (response.userData != null) {
+          authService.saveUserToProvider(provider, response.userData!);
+          await _handleSuccessfulRegistration(response.userData!);
+        } else {
+          throw 'เกิดข้อผิดพลาดในการประมวลผลข้อมูล';
+        }
+        break;
+      case SignupResult.phoneNumberAlreadyExists:
+        throw response.message ?? 'หมายเลขโทรศัพท์นี้ถูกใช้แล้ว';
+      case SignupResult.validationError:
+        throw response.message ?? 'ข้อมูลที่กรอกไม่ถูกต้อง';
+      case SignupResult.serverError:
+        throw response.message ?? 'เซิร์ฟเวอร์ขัดข้อง กรุณาลองใหม่ภายหลัง';
+      case SignupResult.networkError:
+        throw response.message ?? 'เกิดข้อผิดพลาดในการเชื่อมต่อ';
     }
   }
 
-  Future<void> _handleSuccessfulRegistration(Response response) async {
+  Future<void> _handleSuccessfulRegistration(UserData userData) async {
     if (!mounted) return;
 
     _showSuccessMessage('สมัครสมาชิกสำเร็จ');
 
     try {
-      final userId = response.data['data']['id'];
-
       await Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (context) => HomeWrapper(uid: userId)),
+        MaterialPageRoute(builder: (context) => HomeWrapper(uid: userData.id)),
         (route) => false,
       );
     } catch (e) {
@@ -410,34 +415,7 @@ class _UserSignupAddAddressPageState extends State<UserSignupAddAddressPage> {
   void _handleRegistrationError(dynamic error) {
     String errorMessage = 'เกิดข้อผิดพลาดในการสมัครสมาชิก';
 
-    if (error is DioException) {
-      switch (error.type) {
-        case DioExceptionType.connectionTimeout:
-        case DioExceptionType.sendTimeout:
-        case DioExceptionType.receiveTimeout:
-          errorMessage =
-              'การเชื่อมต่อหมดเวลา กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต';
-          break;
-        case DioExceptionType.badResponse:
-          final statusCode = error.response?.statusCode;
-          if (statusCode == 400) {
-            errorMessage = 'ข้อมูลที่กรอกไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง';
-          } else if (statusCode == 409) {
-            errorMessage = 'หมายเลขโทรศัพท์นี้ถูกใช้งานแล้ว';
-          } else if (statusCode != null && statusCode >= 500) {
-            errorMessage = 'เซิร์ฟเวอร์ขัดข้อง กรุณาลองใหม่ภายหลัง';
-          } else {
-            errorMessage = 'เกิดข้อผิดพลาดจากเซิร์ฟเวอร์: $statusCode';
-          }
-          break;
-        case DioExceptionType.connectionError:
-          errorMessage =
-              'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาตรวจสอบการเชื่อมต่อ';
-          break;
-        default:
-          errorMessage = 'เกิดข้อผิดพลาดในการเชื่อมต่อ: ${error.message}';
-      }
-    } else if (error is String) {
+    if (error is String) {
       errorMessage = error;
     }
 
