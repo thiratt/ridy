@@ -1,5 +1,9 @@
+import 'dart:convert';
+
 import 'package:app/models/request/login_request.dart';
+import 'package:app/models/request/login_with_role_request.dart';
 import 'package:app/models/response/login_response.dart';
+import 'package:app/models/response/role_selection_response.dart';
 import 'package:app/pages/auth/signup/page.dart';
 import 'package:app/pages/home/rider/page.dart';
 import 'package:app/utils/navigation.dart';
@@ -124,6 +128,21 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _handleLoginResponse(http.Response response) async {
     if (response.statusCode == 200) {
       try {
+        final responseData = json.decode(response.body);
+
+        // Check if role selection is required
+        if (responseData['data'] != null &&
+            responseData['data']['requireRoleSelection'] == true) {
+          final roleSelectionResponse = roleSelectionResponseFromJson(
+            response.body,
+          );
+          await _showRoleSelectionDialog(
+            roleSelectionResponse.data.availableRoles,
+          );
+          return;
+        }
+
+        // Normal login response
         final loginResponse = loginResponseFromJson(response.body);
         final userData = loginResponse.data;
 
@@ -189,6 +208,112 @@ class _LoginPageState extends State<LoginPage> {
             behavior: SnackBarBehavior.floating,
           ),
         );
+      }
+    }
+  }
+
+  Future<void> _showRoleSelectionDialog(
+    List<AvailableRole> availableRoles,
+  ) async {
+    final selectedRole = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('เลือกบทบาท'),
+          content: const Text(
+            'คุณมีบัญชีหลายบัญชีสำหรับเบอร์โทรนี้ กรุณาเลือกบทบาทที่ต้องการเข้าสู่ระบบ:',
+          ),
+          actions: availableRoles.map((roleData) {
+            return Container(
+              width: double.infinity,
+              margin: const EdgeInsets.symmetric(vertical: 4),
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop(roleData.role);
+                },
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.all(16),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      roleData.roleDisplayName,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      roleData.fullName,
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+        );
+      },
+    );
+
+    if (selectedRole != null) {
+      await _loginWithRole(selectedRole);
+    }
+  }
+
+  Future<void> _loginWithRole(String role) async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final request = LoginWithRoleRequest(
+        phoneNumber: _phoneController.text,
+        password: _passwordController.text,
+        role: role,
+      );
+
+      final response = await http.post(
+        Uri.parse('http://10.0.2.2:5200/account/login/select-role'),
+        headers: {'Content-Type': 'application/json'},
+        body: loginWithRoleRequestToJson(request),
+      );
+
+      if (response.statusCode == 200) {
+        final loginResponse = loginResponseFromJson(response.body);
+        final userData = loginResponse.data;
+
+        await _navigateToHome(userData.role, userData.id);
+      } else if (response.statusCode == 401) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('เบอร์โทรศัพท์หรือรหัสผ่านไม่ถูกต้อง'),
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('เข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่อีกครั้ง'),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print('Error during role-based login: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
       }
     }
   }
