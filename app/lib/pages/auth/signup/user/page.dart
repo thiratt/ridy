@@ -1,9 +1,13 @@
+import 'dart:developer';
 import 'dart:io';
+import 'dart:convert';
+import 'package:app/config/api_constants.dart';
 import 'package:app/models/user_signup_draft.dart';
 import 'package:app/pages/auth/signup/user/add_address.dart';
 import 'package:app/utils/navigation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 
 import 'package:app/widgets/text_field.dart';
@@ -22,9 +26,11 @@ class _UserSignupPageState extends State<UserSignupPage> {
   final _lastNameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _phoneFocusNode = FocusNode();
 
   XFile? _avatar;
   bool _isPickingImage = false;
+  String? _phoneAvailabilityError;
 
   static const String _titleText = 'สร้างบัญชีผู้ใช้ทั่วไป';
   static const String _uploadImageText = 'อัปโหลดรูปภาพ';
@@ -95,7 +101,20 @@ class _UserSignupPageState extends State<UserSignupPage> {
       return 'รูปแบบหมายเลขโทรศัพท์ไม่ถูกต้อง';
     }
 
+    // Check for phone availability error
+    if (_phoneAvailabilityError != null) {
+      return _phoneAvailabilityError;
+    }
+
     return null;
+  }
+
+  void _clearPhoneAvailabilityError() {
+    if (_phoneAvailabilityError != null) {
+      setState(() {
+        _phoneAvailabilityError = null;
+      });
+    }
   }
 
   String? _validatePassword(String? value) {
@@ -207,8 +226,46 @@ class _UserSignupPageState extends State<UserSignupPage> {
     );
   }
 
+  Future<bool> _checkPhoneNumberAvailability(String phoneNumber) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse(ApiConstants.buildUrlEndpoint(ApiRoute.checkPhoneNumber)),
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: json.encode({
+              'phoneNumber': phoneNumber.trim(),
+              'role': 'USER',
+            }),
+          )
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () {
+              throw 'การเชื่อมต่อหมดเวลา กรุณาลองใหม่อีกครั้ง';
+            },
+          );
+
+      if (response.statusCode == 200) {
+        return true;
+      } else if (response.statusCode == 409) {
+        // Phone number already exists
+        return false;
+      } else {
+        throw 'เกิดข้อผิดพลาดในการตรวจสอบเบอร์โทรศัพท์';
+      }
+    } catch (e) {
+      // If there's a network error, we'll show the error but not block the user
+      rethrow;
+    }
+  }
+
   Future<void> _handleNext() async {
-    FocusScope.of(context).unfocus();
+    FocusScope.of(context).requestFocus(FocusNode());
+
+    // Clear any previous phone availability error
+    _clearPhoneAvailabilityError();
 
     if (!_formKey.currentState!.validate()) {
       // _showErrorMessage('กรุณาตรวจสอบข้อมูลที่กรอกให้ถูกต้อง');
@@ -220,25 +277,68 @@ class _UserSignupPageState extends State<UserSignupPage> {
       return;
     }
 
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
     try {
+      // Check if phone number is already in use
+      final phoneNumber = _phoneController.text.trim();
+      final isPhoneAvailable = await _checkPhoneNumberAvailability(phoneNumber);
+
+      // Hide loading indicator
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+
+      if (!isPhoneAvailable) {
+        setState(() {
+          _phoneAvailabilityError =
+              'หมายเลขโทรศัพท์นี้ถูกใช้งานแล้ว กรุณาใช้หมายเลขอื่น';
+        });
+
+        // Trigger form validation to show the error in the phone field
+        _formKey.currentState!.validate();
+
+        if (mounted) {
+          FocusScope.of(context).requestFocus(_phoneFocusNode);
+        }
+        return;
+      }
+
+      // If phone is available, proceed to next page
       final draft = UserSignupDraft(
         firstname: _firstNameController.text.trim(),
         lastname: _lastNameController.text.trim().isEmpty
             ? null
             : _lastNameController.text.trim(),
-        phone: _phoneController.text.trim(),
+        phone: phoneNumber,
         password: _passwordController.text,
         avatar: _avatar!,
       );
 
-      navigateTo(
-        context,
-        UserSignupAddAddressPage(draft: draft),
-        "/auth/signup/user/address",
-      );
-    } catch (e) {
       if (mounted) {
-        _showErrorMessage('เกิดข้อผิดพลาดในการดำเนินการ กรุณาลองใหม่อีกครั้ง');
+        navigateTo(
+          context,
+          UserSignupAddAddressPage(draft: draft),
+          "/auth/signup/user/address",
+        );
+      }
+    } catch (e) {
+      // Hide loading indicator if still showing
+      if (mounted && Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+
+      if (mounted) {
+        _showErrorMessage(
+          e.toString().contains('การเชื่อมต่อหมดเวลา')
+              ? e.toString()
+              : 'เกิดข้อผิดพลาดในการตรวจสอบหมายเลขโทรศัพท์ กรุณาลองใหม่อีกครั้ง',
+        );
       }
     }
   }
@@ -320,7 +420,7 @@ class _UserSignupPageState extends State<UserSignupPage> {
             ),
 
             Padding(
-              padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
+              padding: EdgeInsets.fromLTRB(16, 12, 16, 8),
               child: Column(
                 children: [
                   PrimaryButton(
@@ -399,6 +499,8 @@ class _UserSignupPageState extends State<UserSignupPage> {
           controller: _phoneController,
           keyboardType: TextInputType.phone,
           validator: _validatePhone,
+          onChanged: (_) => _clearPhoneAvailabilityError(),
+          focusNode: _phoneFocusNode,
         ),
         const SizedBox(height: 16),
         PrimaryTextField(
