@@ -202,41 +202,92 @@ class _LoginPageState extends State<LoginPage> {
           content: const Text(
             'คุณมีบัญชีหลายบัญชีสำหรับเบอร์โทรนี้ กรุณาเลือกบทบาทที่ต้องการเข้าสู่ระบบ:',
           ),
-          actions: availableRoles.map((roleData) {
-            return Container(
-              width: double.infinity,
-              margin: const EdgeInsets.symmetric(vertical: 4),
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).pop(roleData.role);
-                },
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.all(16),
-                ),
-                child: Column(
-                  children: [
-                    Text(
-                      roleData.roleDisplayName,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+          actions: [
+            ...availableRoles.map((roleData) {
+              return Container(
+                width: double.infinity,
+                margin: const EdgeInsets.symmetric(vertical: 4),
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(roleData.role);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.all(16),
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        roleData.roleDisplayName,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                    Text(
-                      roleData.fullName,
-                      style: const TextStyle(fontSize: 14),
+                      Text(
+                        roleData.fullName,
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
+            const SizedBox(height: 16),
+            const Divider(),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop('USE_ANOTHER_ACCOUNT');
+                },
+                style: TextButton.styleFrom(padding: const EdgeInsets.all(16)),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.person_add_outlined, size: 20),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'ใช้บัญชีอื่น',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ],
                 ),
               ),
-            );
-          }).toList(),
+            ),
+          ],
         );
       },
     );
 
     if (selectedRole != null) {
-      await _loginWithRole(selectedRole);
+      if (selectedRole == 'USE_ANOTHER_ACCOUNT') {
+        _clearFormAndFocus();
+      } else {
+        await _loginWithRole(selectedRole);
+      }
+    }
+  }
+
+  void _clearFormAndFocus() {
+    setState(() {
+      _phoneController.clear();
+      _passwordController.clear();
+      _errorMessage = null;
+    });
+
+    FocusScope.of(context).requestFocus(FocusNode());
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('กรุณากรอกข้อมูลบัญชีที่ต้องการใช้งาน'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
