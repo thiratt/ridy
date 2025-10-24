@@ -9,4 +9,6 @@ public class UserSummary
     public string? AvatarUrl { get; set; }
     public string FullName { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
+    public List<UserAddress> Addresses { get; set; } = [];
+    public List<UserPickupAddress> PickupAddresses { get; set; } = [];
 }

@@ -28,18 +28,39 @@ namespace server.Controllers
             }
 
             var users = await query
+                .Include(a => a.UserAddresses)
+                .Include(a => a.UserPickupAddresses)
                 .Select(a => new Models.Response.UserSummary
                 {
                     Id = a.Id,
                     PhoneNumber = a.PhoneNumber,
                     Firstname = a.Firstname,
                     Lastname = a.Lastname,
+
                     AvatarUrl = a.AvatarUrl,
                     FullName = string.IsNullOrEmpty(a.Firstname) && string.IsNullOrEmpty(a.Lastname)
                         ? a.Firstname
                         : (a.Firstname + " " + a.Lastname).Trim(),
-                    CreatedAt = a.CreatedAt
+                    CreatedAt = a.CreatedAt,
+                    Addresses = a.UserAddresses.Select(ua => new Models.Response.UserAddress
+                    {
+                        Id = ua.Id,
+                        AddressText = ua.AddressText,
+                        Label = ua.Label,
+                        Latitude = ua.Location.Y,
+                        Longitude = ua.Location.X,
+                        CreatedAt = ua.CreatedAt
+                    }).ToList(),
+                    PickupAddresses = a.UserPickupAddresses.Select(upa => new Models.Response.UserPickupAddress
+                    {
+                        Id = upa.Id,
+                        AddressText = upa.AddressText,
+                        Latitude = upa.Location.Y,
+                        Longitude = upa.Location.X,
+                        CreatedAt = upa.CreatedAt
+                    }).ToList()
                 })
+                .AsSplitQuery()
                 .OrderBy(u => u.FullName)
                 .ToListAsync();
 
