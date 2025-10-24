@@ -1,4 +1,5 @@
 import 'package:app/pages/home/user/page.dart';
+import 'package:app/pages/home/user/profile/page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 
@@ -19,7 +20,7 @@ class _HomeWrapperState extends State<HomeWrapper> {
     _pages = [
       UserHomePage(uid: widget.uid),
       Container(color: Colors.blueAccent), // TODO: UserShipmentPage
-      Container(color: Colors.greenAccent), // TODO: UserProfilePage
+      UserProfilePage(),
     ];
   }
 
