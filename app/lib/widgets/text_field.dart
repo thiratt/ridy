@@ -64,13 +64,10 @@ class _PrimaryTextFieldState extends State<PrimaryTextField> {
     }
 
     if (widget.prefixIconData != null) {
-      return Padding(
-        padding: const EdgeInsets.fromLTRB(18, 0, 4, 0),
-        child: Icon(
-          widget.prefixIconData,
-          size: 20,
-          color: colorScheme.onSurface,
-        ),
+      return Icon(
+        widget.prefixIconData,
+        size: 20,
+        color: colorScheme.onSurface,
       );
     }
 
