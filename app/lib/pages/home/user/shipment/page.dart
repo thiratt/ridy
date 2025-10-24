@@ -197,13 +197,11 @@ class _ShipmentPageState extends State<ShipmentPage> {
             ),
           ),
           DraggableScrollableSheet(
-            initialChildSize: (_isSearchFocused || _showUserDetail) ? 0.8 : 0.2,
-            minChildSize: (_isSearchFocused || _showUserDetail) ? 0.8 : 0.2,
+            initialChildSize: (_isSearchFocused) ? 0.8 : 0.2,
+            minChildSize: (_isSearchFocused) ? 0.8 : 0.2,
             maxChildSize: 0.8,
             snap: true,
-            snapSizes: (_isSearchFocused || _showUserDetail)
-                ? const [0.8]
-                : const [0.2, 0.4, 0.8],
+            snapSizes: (_isSearchFocused) ? const [0.8] : const [0.2, 0.4, 0.8],
             controller: _draggableScrollableController,
             builder: (context, scrollController) {
               return GestureDetector(
@@ -213,6 +211,7 @@ class _ShipmentPageState extends State<ShipmentPage> {
                         user: _selectedUser!,
                         onBack: _backToUserSelection,
                         onSelectDeliveryAddress: _selectDeliveryAddress,
+                        scrollController: scrollController,
                       )
                     : Container(
                         decoration: BoxDecoration(
@@ -537,48 +536,21 @@ class _ShipmentPageState extends State<ShipmentPage> {
   }
 
   void _selectDeliveryAddress(Address address) {
-    // Handle delivery address selection
-    navigateTo(context, UploadImagePage(), "/shipment/upload_image");
-    // showDialog(
-    //   context: context,
-    //   builder: (context) => AlertDialog(
-    //     title: const Text('ยืนยันที่อยู่จัดส่ง'),
-    //     content: Column(
-    //       mainAxisSize: MainAxisSize.min,
-    //       crossAxisAlignment: CrossAxisAlignment.start,
-    //       children: [
-    //         Text('ผู้รับสินค้า: ${_selectedUser?.fullName}'),
-    //         const SizedBox(height: 8),
-    //         if (address.label?.isNotEmpty == true) ...[
-    //           Text('ป้ายกำกับ: ${address.label}'),
-    //           const SizedBox(height: 8),
-    //         ],
-    //         Text('ที่อยู่: ${address.addressText}'),
-    //       ],
+    if (_selectedUser == null) return;
+
+    // Navigate to upload image page with selected user and address data
+    navigateTo(
+      context,
+      UploadImagePage(recipient: _selectedUser!, deliveryAddress: address),
+      "/shipment/upload_image",
+    );
+    // Navigator.push(
+    //   context,
+    //   MaterialPageRoute(
+    //     builder: (context) => UploadImagePage(
+    //       recipient: _selectedUser!,
+    //       deliveryAddress: address,
     //     ),
-    //     actions: [
-    //       TextButton(
-    //         onPressed: () => Navigator.pop(context),
-    //         child: const Text('ยกเลิก'),
-    //       ),
-    //       ElevatedButton(
-    //         onPressed: () {
-    //           Navigator.pop(context);
-    //           ScaffoldMessenger.of(context).showSnackBar(
-    //             SnackBar(
-    //               content: Text('เลือกที่อยู่จัดส่งเรียบร้อยแล้ว'),
-    //               action: SnackBarAction(
-    //                 label: 'ต่อไป',
-    //                 onPressed: () {
-    //                   // Navigate to next step (create shipment form)
-    //                 },
-    //               ),
-    //             ),
-    //           );
-    //         },
-    //         child: const Text('ยืนยัน'),
-    //       ),
-    //     ],
     //   ),
     // );
   }

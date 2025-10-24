@@ -5,97 +5,100 @@ class UserDetailSheet extends StatelessWidget {
   final UserInformation user;
   final VoidCallback onBack;
   final Function(Address) onSelectDeliveryAddress;
+  final ScrollController scrollController;
 
   const UserDetailSheet({
     super.key,
     required this.user,
     required this.onBack,
     required this.onSelectDeliveryAddress,
+    required this.scrollController,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
-          ),
-        ],
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 10,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: CustomScrollView(
+          controller: scrollController,
+          slivers: [
+            // SliverToBoxAdapter(
+            //   child: Container(
+            //     height: 32,
+            //     alignment: Alignment.center,
+            //     child: Container(
+            //       width: 40,
+            //       height: 4,
+            //       decoration: BoxDecoration(
+            //         color: Theme.of(
+            //           context,
+            //         ).colorScheme.onSurface.withValues(alpha: 0.3),
+            //         borderRadius: BorderRadius.circular(2),
+            //       ),
+            //     ),
+            //   ),
+            // ),
+            _buildHeader(context),
+            _buildContent(context),
+          ],
+        ),
       ),
-      child: Column(
-        children: [
-          // Drag handle
-          Container(
-            height: 32,
-            alignment: Alignment.center,
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
+    );
+  }
 
-          // Header with back button and user name
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              children: [
-                IconButton(
-                  onPressed: onBack,
-                  icon: const Icon(Icons.arrow_back),
-                  tooltip: 'กลับไปเลือกผู้รับสินค้า',
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    user.fullName,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const Divider(height: 1),
-
-          // Scrollable content
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildUserInfoCard(context),
-
-                  const SizedBox(height: 20),
-
-                  _buildDeliveryAddressesSection(context),
-
-                  const SizedBox(height: 20),
-
-                  _buildPickupAddressesSection(context),
-
-                  const SizedBox(height: 100),
-                ],
-              ),
-            ),
-          ),
-        ],
+  Widget _buildHeader(BuildContext context) {
+    return SliverAppBar(
+      pinned: true,
+      leading: IconButton(
+        onPressed: onBack,
+        icon: const Icon(Icons.arrow_back),
+        tooltip: 'กลับไปเลือกผู้รับสินค้า',
       ),
+      title: Text(
+        user.fullName,
+        style: Theme.of(
+          context,
+        ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
+      ),
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      elevation: 0,
+    );
+  }
+
+  Widget _buildContent(BuildContext context) {
+    return SliverList(
+      delegate: SliverChildListDelegate([
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildUserInfoCard(context),
+
+              const SizedBox(height: 20),
+
+              _buildDeliveryAddressesSection(context),
+
+              const SizedBox(height: 20),
+
+              _buildPickupAddressesSection(context),
+
+              const SizedBox(height: 100),
+            ],
+          ),
+        ),
+      ]),
     );
   }
 
