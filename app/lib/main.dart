@@ -5,6 +5,7 @@ import 'package:app/pages/auth/signup/rider/page.dart';
 import 'package:app/pages/auth/signup/user/add_address.dart';
 import 'package:app/pages/auth/signup/user/page.dart';
 import 'package:app/pages/auth/signup/user/select_address.dart';
+import 'package:app/pages/home/user/page.dart';
 import 'package:app/pages/onboarding.dart';
 import 'package:app/themes/app_theme.dart';
 import 'package:flutter/material.dart';
@@ -36,14 +37,22 @@ class RidyApplication extends StatelessWidget {
       },
       onGenerateRoute: (settings) => MaterialPageRoute(
         builder: (context) {
-          if (settings.name == '/auth/signup/user/address') {
-            final args = settings.arguments as Map<String, dynamic>?;
-            final draft = args != null && args['draft'] is UserSignupDraft
-                ? args['draft'] as UserSignupDraft
-                : null;
-            if (draft != null) {
-              return UserSignupAddAddressPage(draft: draft);
-            }
+          switch (settings.name) {
+            case '/auth/signup/user/address/add':
+              final args = settings.arguments as Map<String, dynamic>?;
+              final draft = args != null && args['draft'] is UserSignupDraft
+                  ? args['draft'] as UserSignupDraft
+                  : null;
+              if (draft != null) {
+                return UserSignupAddAddressPage(draft: draft);
+              }
+              break;
+            case '/home/user':
+              final uid = settings.arguments as String?;
+              if (uid != null) {
+                return UserHomePage(uid: uid);
+              }
+              break;
           }
           return const OnBoardingPage();
         },
