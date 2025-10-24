@@ -82,7 +82,7 @@ namespace server.Controllers
             var account = await _context.Accounts
                 .Include(a => a.UserAddresses)
                 .Include(a => a.UserPickupAddresses)
-                .Include(a => a.RiderProfile)
+                // .Include(a => a.RiderProfile)
                 // .Include(a => a.RiderActiveLock)
                 .AsSplitQuery()
                 .FirstOrDefaultAsync(a => a.Id == id);
@@ -99,6 +99,9 @@ namespace server.Controllers
                 return NotFound(errorResponse);
             }
 
+            var riderProfile = await _context.RiderProfiles
+                .FirstOrDefaultAsync(rp => rp.RiderId == account.Id);
+
             var accountResponse = new Models.Response.Account
             {
                 Id = account.Id,
@@ -110,11 +113,11 @@ namespace server.Controllers
                 CreatedAt = ThaiDateConvertor.ToThaiDateString(account.CreatedAt),
                 UpdatedAt = ThaiDateConvertor.ToThaiDateString(account.UpdatedAt),
 
-                RiderProfile = account.RiderProfile is not null ? new Models.Response.RiderProfile
+                RiderProfile = riderProfile != null ? new Models.Response.RiderProfile
                 {
-                    RiderId = account.RiderProfile.RiderId,
-                    VehiclePlate = account.RiderProfile.VehiclePlate,
-                    VehiclePhotoUrl = account.RiderProfile.VehiclePhotoUrl,
+                    RiderId = riderProfile.RiderId,
+                    VehiclePlate = riderProfile.VehiclePlate,
+                    VehiclePhotoUrl = riderProfile.VehiclePhotoUrl
                 } : null,
                 UserAddresses = [.. account.UserAddresses.Select(ua => new Models.Response.UserAddress
                 {
@@ -128,6 +131,7 @@ namespace server.Controllers
                 UserPickupAddresses = [.. account.UserPickupAddresses.Select(upa => new Models.Response.UserPickupAddress
                 {
                     Id = upa.Id,
+                    Label = upa.Label,
                     AddressText = upa.AddressText,
                     Latitude = upa.Location.Y,
                     Longitude = upa.Location.X,
@@ -224,15 +228,7 @@ namespace server.Controllers
                 {
                     Status = Models.Enum.ResponseStatus.Success,
                     Message = "เข้าสู่ระบบสำเร็จ",
-                    Data = new
-                    {
-                        id = account.Id,
-                        role = account.Role,
-                        phoneNumber = account.PhoneNumber,
-                        firstname = account.Firstname,
-                        lastname = account.Lastname,
-                        avatarUrl = account.AvatarUrl
-                    }
+                    Data = CreatedAtAction(nameof(GetAccountById), new { id = account.Id })
                 });
             }
 

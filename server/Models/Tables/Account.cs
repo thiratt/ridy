@@ -31,8 +31,6 @@ public partial class Account
 
     public virtual RiderActiveLock? RiderActiveLock { get; set; }
 
-    public virtual RiderProfile? RiderProfile { get; set; }
-
     public virtual ICollection<UserAddress> UserAddresses { get; set; } = new List<UserAddress>();
 
     public virtual ICollection<UserPickupAddress> UserPickupAddresses { get; set; } = new List<UserPickupAddress>();
