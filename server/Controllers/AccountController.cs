@@ -47,8 +47,8 @@ namespace server.Controllers
                     Id = ua.Id,
                     AddressText = ua.AddressText,
                     Label = ua.Label,
-                    Latitude = ua.Location.X,
-                    Longitude = ua.Location.Y,
+                    Latitude = ua.Location.Y,
+                    Longitude = ua.Location.X,
                     CreatedAt = ua.CreatedAt
                 })],
                 PickupAddresses = [.. a.UserPickupAddresses.Select(upa => new Models.Response.UserPickupAddress
@@ -56,8 +56,8 @@ namespace server.Controllers
                     Id = upa.Id,
                     Label = upa.Label,
                     AddressText = upa.AddressText,
-                    Latitude = upa.Location.X,
-                    Longitude = upa.Location.Y,
+                    Latitude = upa.Location.Y,
+                    Longitude = upa.Location.X,
                     CreatedAt = upa.CreatedAt
                 })]
             })
