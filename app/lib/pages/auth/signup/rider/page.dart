@@ -25,7 +25,6 @@ class _RiderSignupConfig {
   static const double avatarIconSize = 30;
 
   static final RegExp phonePattern = RegExp(r'^[0-9]{10}$');
-  static final RegExp plateNumberPattern = RegExp(r'^[ก-ฮA-Z0-9\s\-]{1,10}$');
   static const int minPasswordLength = 6;
   static const int maxPasswordLength = 50;
   static const int maxNameLength = 50;
@@ -42,7 +41,6 @@ class _RiderSignupErrorMessages {
   static const String passwordTooShort = 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร';
   static const String passwordTooLong = 'รหัสผ่านต้องไม่เกิน 50 ตัวอักษร';
   static const String plateNumberRequired = 'กรุณากรอกหมายเลขทะเบียนรถ';
-  static const String plateNumberInvalid = 'หมายเลขทะเบียนรถไม่ถูกต้อง';
   static const String avatarRequired = 'กรุณาเลือกรูปโปรไฟล์';
 
   static const String imagePickerError = 'เกิดข้อผิดพลาดในการเลือกรูปภาพ';
@@ -142,9 +140,6 @@ class RiderSignupPageState extends State<RiderSignupPage> {
   String? _validatePlateNumber(String? value) {
     if (value == null || value.trim().isEmpty) {
       return _RiderSignupErrorMessages.plateNumberRequired;
-    }
-    if (!_RiderSignupConfig.plateNumberPattern.hasMatch(value.trim())) {
-      return _RiderSignupErrorMessages.plateNumberInvalid;
     }
     return null;
   }
