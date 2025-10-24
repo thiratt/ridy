@@ -32,16 +32,18 @@ class SignupResponse {
 class SignupData {
   String id;
   String role;
-  String? phoneNumber;
-  String? firstname;
-  String? lastname;
+  String phoneNumber;
+  String firstname;
+  String lastname;
+  String avatarUrl;
 
   SignupData({
     required this.id,
     required this.role,
-    this.phoneNumber,
-    this.firstname,
-    this.lastname,
+    required this.phoneNumber,
+    required this.firstname,
+    required this.lastname,
+    required this.avatarUrl,
   });
 
   factory SignupData.fromJson(Map<String, dynamic> json) => SignupData(
@@ -50,6 +52,7 @@ class SignupData {
     phoneNumber: json["phoneNumber"],
     firstname: json["firstname"],
     lastname: json["lastname"],
+    avatarUrl: json["avatarUrl"],
   );
 
   Map<String, dynamic> toJson() => {
@@ -61,9 +64,9 @@ class SignupData {
   };
 
   String get fullName {
-    if (firstname != null && lastname != null && lastname!.isNotEmpty) {
+    if (firstname.isNotEmpty && lastname.isNotEmpty) {
       return '$firstname $lastname';
     }
-    return firstname ?? '';
+    return firstname;
   }
 }

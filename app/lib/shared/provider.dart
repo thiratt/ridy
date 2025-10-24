@@ -3,23 +3,25 @@ import 'package:flutter/material.dart';
 class UserData {
   final String id;
   final String role;
-  final String? phoneNumber;
-  final String? firstname;
-  final String? lastname;
+  final String phoneNumber;
+  final String firstname;
+  final String lastname;
+  final String avatarUrl;
 
   UserData({
     required this.id,
     required this.role,
-    this.phoneNumber,
-    this.firstname,
-    this.lastname,
+    required this.phoneNumber,
+    required this.firstname,
+    required this.lastname,
+    required this.avatarUrl,
   });
 
   String get fullName {
-    if (firstname != null && lastname != null && lastname!.isNotEmpty) {
+    if (firstname.isNotEmpty && lastname.isNotEmpty) {
       return '$firstname $lastname';
     }
-    return firstname ?? '';
+    return firstname;
   }
 }
 
@@ -52,6 +54,7 @@ class RidyProvider with ChangeNotifier {
         phoneNumber: _currentUser!.phoneNumber,
         firstname: _currentUser!.firstname,
         lastname: _currentUser!.lastname,
+        avatarUrl: _currentUser!.avatarUrl,
       );
       notifyListeners();
     }

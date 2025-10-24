@@ -139,6 +139,7 @@ class AuthenticationService {
           phoneNumber: userData.phoneNumber,
           firstname: userData.firstname,
           lastname: userData.lastname,
+          avatarUrl: userData.avatarUrl,
         );
 
         return AuthLoginResponse(result: LoginResult.success, userData: user);
@@ -263,6 +264,7 @@ class AuthenticationService {
           phoneNumber: userData.phoneNumber,
           firstname: userData.firstname,
           lastname: userData.lastname,
+          avatarUrl: userData.avatarUrl,
         );
 
         return AuthSignupResponse(result: SignupResult.success, userData: user);
