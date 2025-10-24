@@ -93,7 +93,7 @@ namespace server.Controllers
                 .Where(a => a.PhoneNumber == request.PhoneNumber)
                 .ToListAsync();
 
-            if (!accounts.Any())
+            if (accounts.Count == 0)
             {
                 var errorResponse = new Models.Response.ErrorResponse
                 {
@@ -115,7 +115,7 @@ namespace server.Controllers
                 }
             }
 
-            if (!validAccounts.Any())
+            if (validAccounts.Count == 0)
             {
                 var errorResponse = new Models.Response.ErrorResponse
                 {
