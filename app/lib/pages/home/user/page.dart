@@ -1,8 +1,10 @@
 import 'dart:convert';
 
 import 'package:app/models/delivery.dart';
+import 'package:app/pages/home/user/shipment/page.dart';
 import 'package:app/services/location_service.dart';
 import 'package:app/themes/app_theme.dart';
+import 'package:app/utils/navigation.dart';
 import 'package:app/widgets/text_field.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -30,7 +32,7 @@ class _UserHomePageState extends State<UserHomePage> {
   List<Delivery> _filteredDeliveries = [];
 
   void _createShipment() {
-    // TODO: Navigate to create shipment page
+    navigateTo(context, ShipmentPage(), '/shipment');
   }
 
   void _openFilter() {
@@ -223,7 +225,7 @@ class _UserHomePageState extends State<UserHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final bottom = MediaQuery.of(context).viewPadding.bottom;
+    // final bottom = MediaQuery.of(context).viewPadding.bottom;
 
     return Scaffold(
       body: FutureBuilder(
