@@ -16,6 +16,7 @@ class PrimaryTextField extends StatefulWidget {
   final ValueChanged<String>? onChanged;
   final VoidCallback? onEditingComplete;
   final ValueChanged<String>? onSubmitted;
+  final FocusNode? focusNode;
 
   const PrimaryTextField({
     super.key,
@@ -34,6 +35,7 @@ class PrimaryTextField extends StatefulWidget {
     this.onChanged,
     this.onEditingComplete,
     this.onSubmitted,
+    this.focusNode,
   }) : assert(
          !isPassword || showPasswordToggle || suffixIcon == null,
          'Cannot show both suffixIcon and password toggle for password fields',
@@ -105,6 +107,7 @@ class _PrimaryTextFieldState extends State<PrimaryTextField> {
       onEditingComplete: widget.onEditingComplete,
       onFieldSubmitted: widget.onSubmitted,
       textAlignVertical: TextAlignVertical.center,
+      focusNode: widget.focusNode,
 
       enableSuggestions: !widget.isPassword,
       autocorrect: !widget.isPassword,
