@@ -88,31 +88,153 @@ namespace server.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
-            var account = await _context.Accounts
-                .FirstOrDefaultAsync(a => a.PhoneNumber == request.PhoneNumber);
+            // Get all accounts with the same phone number
+            var accounts = await _context.Accounts
+                .Where(a => a.PhoneNumber == request.PhoneNumber)
+                .ToListAsync();
 
-            if (account == null || !await Argon2HashingUtil.Verify(request.Password, account.PasswordHash))
+            if (!accounts.Any())
             {
                 var errorResponse = new Models.Response.ErrorResponse
                 {
                     Status = Models.Enum.ResponseStatus.Fail,
-                    Message = "Invalid phone number or password",
+                    Message = "หมายเลขโทรศัพท์หรือรหัสผ่านไม่ถูกต้อง",
                     Details = new { request.PhoneNumber }
                 };
 
                 return Unauthorized(errorResponse);
             }
 
+            // Check which accounts have matching passwords
+            var validAccounts = new List<Account>();
+            foreach (var account in accounts)
+            {
+                if (await Argon2HashingUtil.Verify(request.Password, account.PasswordHash))
+                {
+                    validAccounts.Add(account);
+                }
+            }
+
+            if (!validAccounts.Any())
+            {
+                var errorResponse = new Models.Response.ErrorResponse
+                {
+                    Status = Models.Enum.ResponseStatus.Fail,
+                    Message = "หมายเลขโทรศัพท์หรือรหัสผ่านไม่ถูกต้อง",
+                    Details = new { request.PhoneNumber }
+                };
+
+                return Unauthorized(errorResponse);
+            }
+
+            // If only one valid account, return it directly
+            if (validAccounts.Count == 1)
+            {
+                var account = validAccounts.First();
+                return Ok(new Models.Response.SuccessResponse
+                {
+                    Status = Models.Enum.ResponseStatus.Success,
+                    Message = "เข้าสู่ระบบสำเร็จ",
+                    Data = new
+                    {
+                        id = account.Id,
+                        role = account.Role,
+                        phoneNumber = account.PhoneNumber,
+                        firstname = account.Firstname,
+                        lastname = account.Lastname
+                    }
+                });
+            }
+
+            // If multiple valid accounts (same password for USER and RIDER), let user choose
             return Ok(new Models.Response.SuccessResponse
             {
                 Status = Models.Enum.ResponseStatus.Success,
-                Message = "Login successful",
+                Message = "พบบัญชีหลายบัญชี กรุณาเลือกประเภทบัญชีที่ต้องการเข้าสู่ระบบ",
                 Data = new
                 {
-                    id = account.Id,
-                    role = account.Role
+                    requireRoleSelection = true,
+                    availableRoles = validAccounts.Select(a => new
+                    {
+                        id = a.Id,
+                        role = a.Role,
+                        roleDisplayName = a.Role.ToUpper() == "USER" ? "ผู้ใช้งาน" : "ผู้ขับขี่",
+                        phoneNumber = a.PhoneNumber,
+                        firstname = a.Firstname,
+                        lastname = a.Lastname
+                    }).ToList()
                 }
             });
+        }
+
+        [HttpPost("login/select-role")]
+        public async Task<IActionResult> LoginWithRoleSelection([FromBody] LoginWithRoleRequest request)
+        {
+            try
+            {
+                // Get all accounts with the same phone number
+                var accounts = await _context.Accounts
+                    .Where(a => a.PhoneNumber == request.PhoneNumber)
+                    .ToListAsync();
+
+                if (!accounts.Any())
+                {
+                    return Unauthorized(new Models.Response.ErrorResponse
+                    {
+                        Status = Models.Enum.ResponseStatus.Fail,
+                        Message = "หมายเลขโทรศัพท์ไม่ถูกต้อง",
+                        Details = null
+                    });
+                }
+
+                // Find the account with the requested role and verify password
+                var targetAccount = accounts.FirstOrDefault(a => a.Role.ToUpper() == request.Role.ToUpper());
+
+                if (targetAccount == null)
+                {
+                    return BadRequest(new Models.Response.ErrorResponse
+                    {
+                        Status = Models.Enum.ResponseStatus.Fail,
+                        Message = "ไม่พบบัญชีสำหรับบทบาทที่เลือก",
+                        Details = null
+                    });
+                }
+
+                // Verify password
+                if (!await Argon2HashingUtil.Verify(request.Password, targetAccount.PasswordHash))
+                {
+                    return Unauthorized(new Models.Response.ErrorResponse
+                    {
+                        Status = Models.Enum.ResponseStatus.Fail,
+                        Message = "รหัสผ่านไม่ถูกต้อง",
+                        Details = null
+                    });
+                }
+
+                return Ok(new Models.Response.SuccessResponse
+                {
+                    Status = Models.Enum.ResponseStatus.Success,
+                    Message = "เข้าสู่ระบบสำเร็จ",
+                    Data = new
+                    {
+                        id = targetAccount.Id,
+                        role = targetAccount.Role,
+                        phoneNumber = targetAccount.PhoneNumber,
+                        firstname = targetAccount.Firstname,
+                        lastname = targetAccount.Lastname
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                return StatusCode(500, new Models.Response.ErrorResponse
+                {
+                    Status = Models.Enum.ResponseStatus.Error,
+                    Message = "เกิดข้อผิดพลาดในการเข้าสู่ระบบ",
+                    Details = null
+                });
+            }
         }
 
         [HttpPost("register")]
@@ -120,13 +242,18 @@ namespace server.Controllers
         {
             try
             {
-                if (await _context.Accounts.AnyAsync(a => a.PhoneNumber == request.PhoneNumber))
+                // Check if phone number is already used for the same role
+                var existingAccount = await _context.Accounts
+                    .FirstOrDefaultAsync(a => a.PhoneNumber == request.PhoneNumber && a.Role == request.Role);
+
+                if (existingAccount != null)
                 {
+                    var roleName = request.Role.ToUpper() == "USER" ? "ผู้ใช้งาน" : "ผู้ขับขี่";
                     var errorResponse = new Models.Response.ErrorResponse
                     {
                         Status = Models.Enum.ResponseStatus.Fail,
-                        Message = "Phone number already in use",
-                        Details = new { request.PhoneNumber }
+                        Message = $"หมายเลขโทรศัพท์นี้ถูกใช้แล้วสำหรับ{roleName}",
+                        Details = new { request.PhoneNumber, Role = request.Role }
                     };
 
                     return Conflict(errorResponse);
