@@ -454,6 +454,7 @@ namespace server.Controllers
                         {
                             UserId = newAccount.Id,
                             AddressText = request.PickupAddressTexts[i],
+                            Label = request.PickupAddressLabels?[i] ?? $"จุดรับ {i + 1}",
                             Location = new Point(new Coordinate(request.PickupAddressLongitudes![i], request.PickupAddressLatitudes![i])) { SRID = 4326 },
                             CreatedAt = DateTime.UtcNow
                         };
@@ -489,6 +490,7 @@ namespace server.Controllers
                     {
                         UserId = newAccount.Id,
                         AddressText = request.PickupAddressText!,
+                        Label = request.PickupAddressLabel!,
                         Location = new Point(new Coordinate(request.PickupAddressLongitude.Value, request.PickupAddressLatitude.Value)) { SRID = 4326 },
                         CreatedAt = DateTime.UtcNow
                     };

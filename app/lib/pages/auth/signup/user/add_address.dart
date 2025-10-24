@@ -347,6 +347,9 @@ class _UserSignupAddAddressPageState extends State<UserSignupAddAddressPage> {
       pickupAddressTexts: _pickupAddresses.isNotEmpty
           ? _pickupAddresses.map((addr) => addr.text).toList()
           : null,
+      pickupAddressLabels: _pickupAddresses.isNotEmpty
+          ? _pickupAddresses.map((addr) => addr.label).toList()
+          : null,
       pickupAddressLatitudes: _pickupAddresses.isNotEmpty
           ? _pickupAddresses.map((addr) => addr.lat).toList()
           : null,
@@ -365,6 +368,9 @@ class _UserSignupAddAddressPageState extends State<UserSignupAddAddressPage> {
           : null,
       pickupAddressText: _pickupAddresses.isNotEmpty
           ? _pickupAddresses.first.text
+          : null,
+      pickupAddressLabel: _pickupAddresses.isNotEmpty
+          ? _pickupAddresses.first.label
           : null,
       pickupAddressLatitude: _pickupAddresses.isNotEmpty
           ? _pickupAddresses.first.lat

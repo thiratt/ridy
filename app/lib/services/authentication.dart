@@ -198,6 +198,7 @@ class AuthenticationService {
       if (signupRequest.pickupAddressTexts != null &&
           signupRequest.pickupAddressTexts!.isNotEmpty) {
         formDataMap['PickupAddressTexts'] = signupRequest.pickupAddressTexts;
+        formDataMap['PickupAddressLabels'] = signupRequest.pickupAddressLabels;
         formDataMap['PickupAddressLatitudes'] =
             signupRequest.pickupAddressLatitudes;
         formDataMap['PickupAddressLongitudes'] =
@@ -213,6 +214,7 @@ class AuthenticationService {
 
       if (signupRequest.pickupAddressText != null) {
         formDataMap['PickupAddressText'] = signupRequest.pickupAddressText;
+        formDataMap['PickupAddressLabel'] = signupRequest.pickupAddressLabel;
         formDataMap['PickupAddressLatitude'] =
             signupRequest.pickupAddressLatitude;
         formDataMap['PickupAddressLongitude'] =

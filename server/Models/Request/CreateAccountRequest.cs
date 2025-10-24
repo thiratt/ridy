@@ -17,6 +17,7 @@ public class CreateAccountRequest
     public double? AddressLatitude { get; set; }
     public double? AddressLongitude { get; set; }
     public string? PickupAddressText { get; set; }
+    public string? PickupAddressLabel { get; set; }
     public double? PickupAddressLatitude { get; set; }
     public double? PickupAddressLongitude { get; set; }
 
@@ -26,6 +27,7 @@ public class CreateAccountRequest
     public double[]? MainAddressLatitudes { get; set; }
     public double[]? MainAddressLongitudes { get; set; }
     public string[]? PickupAddressTexts { get; set; }
+    public string[]? PickupAddressLabels { get; set; }
     public double[]? PickupAddressLatitudes { get; set; }
     public double[]? PickupAddressLongitudes { get; set; }
 

@@ -12,6 +12,7 @@ class SignupRequest {
   final List<double>? mainAddressLatitudes;
   final List<double>? mainAddressLongitudes;
   final List<String>? pickupAddressTexts;
+  final List<String>? pickupAddressLabels;
   final List<double>? pickupAddressLatitudes;
   final List<double>? pickupAddressLongitudes;
   final String? addressText;
@@ -19,6 +20,7 @@ class SignupRequest {
   final double? addressLatitude;
   final double? addressLongitude;
   final String? pickupAddressText;
+  final String? pickupAddressLabel;
   final double? pickupAddressLatitude;
   final double? pickupAddressLongitude;
 
@@ -34,6 +36,7 @@ class SignupRequest {
     this.mainAddressLatitudes,
     this.mainAddressLongitudes,
     this.pickupAddressTexts,
+    this.pickupAddressLabels,
     this.pickupAddressLatitudes,
     this.pickupAddressLongitudes,
     this.addressText,
@@ -41,6 +44,7 @@ class SignupRequest {
     this.addressLatitude,
     this.addressLongitude,
     this.pickupAddressText,
+    this.pickupAddressLabel,
     this.pickupAddressLatitude,
     this.pickupAddressLongitude,
   });
