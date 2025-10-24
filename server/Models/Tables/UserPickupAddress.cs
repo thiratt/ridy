@@ -10,6 +10,8 @@ public partial class UserPickupAddress
 
     public Guid UserId { get; set; }
 
+    public string Label { get; set; } = null!;
+
     public string AddressText { get; set; } = null!;
 
     public Point Location { get; set; } = null!;

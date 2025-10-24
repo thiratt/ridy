@@ -37,7 +37,7 @@ public partial class RidyContext : DbContext
 
             entity.ToTable("account");
 
-            entity.HasIndex(e => e.PhoneNumber, "phone").IsUnique();
+            entity.HasIndex(e => new { e.PhoneNumber, e.Role }, "uq_phone_role").IsUnique();
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.AvatarUrl)
@@ -60,6 +60,7 @@ public partial class RidyContext : DbContext
                 .HasMaxLength(10)
                 .HasColumnName("phone_number");
             entity.Property(e => e.Role)
+                .HasDefaultValueSql("'USER'")
                 .HasColumnType("enum('USER','RIDER')")
                 .HasColumnName("role");
             entity.Property(e => e.UpdatedAt)
@@ -84,8 +85,6 @@ public partial class RidyContext : DbContext
             entity.HasIndex(e => e.RiderId, "fk_delivery_rider");
 
             entity.HasIndex(e => e.SenderId, "fk_delivery_sender");
-
-            entity.HasIndex(e => new { e.Id, e.RiderId }, "uq_delivery_rider_once").IsUnique();
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.BaseStatus)
@@ -183,13 +182,13 @@ public partial class RidyContext : DbContext
 
         modelBuilder.Entity<RiderProfile>(entity =>
         {
-            entity.HasKey(e => e.RiderId).HasName("PRIMARY");
+            entity
+                .HasNoKey()
+                .ToTable("rider_profile");
 
-            entity.ToTable("rider_profile");
+            entity.HasIndex(e => e.RiderId, "fk_riderprofile_account");
 
-            entity.Property(e => e.RiderId)
-                .ValueGeneratedOnAdd()
-                .HasColumnName("rider_id");
+            entity.Property(e => e.RiderId).HasColumnName("rider_id");
             entity.Property(e => e.VehiclePhotoUrl)
                 .HasMaxLength(255)
                 .HasColumnName("vehicle_photo_url");
@@ -197,8 +196,8 @@ public partial class RidyContext : DbContext
                 .HasMaxLength(50)
                 .HasColumnName("vehicle_plate");
 
-            entity.HasOne(d => d.Rider).WithOne(p => p.RiderProfile)
-                .HasForeignKey<RiderProfile>(d => d.RiderId)
+            entity.HasOne(d => d.Rider).WithMany()
+                .HasForeignKey(d => d.RiderId)
                 .HasConstraintName("fk_riderprofile_account");
         });
 
@@ -221,7 +220,9 @@ public partial class RidyContext : DbContext
             entity.Property(e => e.Label)
                 .HasMaxLength(60)
                 .HasColumnName("label");
-            entity.Property(e => e.Location).HasColumnName("location");
+            entity.Property(e => e.Location)
+                .HasAnnotation("MySql:SpatialReferenceSystemId", 4326)
+                .HasColumnName("location");
             entity.Property(e => e.UserId).HasColumnName("user_id");
 
             entity.HasOne(d => d.User).WithMany(p => p.UserAddresses)
@@ -245,6 +246,9 @@ public partial class RidyContext : DbContext
                 .HasDefaultValueSql("CURRENT_TIMESTAMP(3)")
                 .HasColumnType("timestamp(3)")
                 .HasColumnName("created_at");
+            entity.Property(e => e.Label)
+                .HasMaxLength(60)
+                .HasColumnName("label");
             entity.Property(e => e.Location)
                 .HasAnnotation("MySql:SpatialReferenceSystemId", 4326)
                 .HasColumnName("location");
